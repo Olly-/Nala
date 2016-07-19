@@ -1,0 +1,7 @@
+/src/ide/ML.txt
+/src/ide/Nala
+/src/ide/*.exe
+/src/ide/ppas.sh
+/src/ide/lib/i386-linux/*.o
+/src/ide/lib/i386-linux/*.ppu
+/src/ide/laz/backup/*.bak
