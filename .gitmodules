@@ -1,0 +1,3 @@
+[submodule "src/lape"]
+	path = src/lape
+	url = https://github.com/nielsAD/lape

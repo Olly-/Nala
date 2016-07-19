@@ -7,9 +7,13 @@
 *.lps
 *.bak
 *.local
+*.exe
 
 /src/ide/ML.txt
 /src/ide/Nala
-/src/ide/*.exe
+
+/src/other/codeparser debug/ParserTest
+/src/other/castalia debug/ParserTest
 
 lib/
+/src/ide/ppas.sh

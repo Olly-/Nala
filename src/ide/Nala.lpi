@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="9"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <SaveFoldState Value="False"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="Nala"/>
+      <UseAppBundle Value="False"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+    </General>
+    <i18n>
+      <EnableI18N LFM="False"/>
+    </i18n>
+    <VersionInfo>
+      <StringTable ProductVersion=""/>
+    </VersionInfo>
+    <BuildModes Count="1">
+      <Item1 Name="Default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="4">
+      <Item1>
+        <PackageName Value="aggpaslcl"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="SynEdit"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="anchordocking"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
+    </RequiredPackages>
+    <Units Count="43">
+      <Unit0>
+        <Filename Value="Nala.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="nala.mainform.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="NalaForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="nala.MainForm"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="nala.panel.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Panel"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="nala.synedit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.SynEdit"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="nala.messages.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Messages"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="nala.codeexplorer.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.CodeExplorer"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="nala.listbox.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ListBox"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\units\nala.helpers.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Helpers"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\units\nala.coretypes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.CoreTypes"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\units\nala.strings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Strings"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\units\imports\nala.imports.core.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.Core"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\units\imports\nala.imports.time.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.Time"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\units\nala.time.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Time"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\units\nala.windowbase.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.WindowBase"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\units\nala.oswindows.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.OSWindows"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="nala.clientpanel.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ClientPanel"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\units\nala.bitmap.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Bitmap"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\units\nala.colormath.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ColorMath"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="nala.colorpanel.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ColorPanel"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="nala.misccomponents.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.MiscComponents"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="nala.borderform.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.BorderForm"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="nala.clientpicker.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ClientPicker"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="nala.colorpicker.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ColorPicker"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="nala.scripttab.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ScriptTab"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\units\imports\nala.imports.strings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.Strings"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\units\nala.tbox.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.TBox"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\units\imports\nala.imports.box.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.Box"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="nala.lapecompiler.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.LapeCompiler"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="..\units\nala.mousebase.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.MouseBase"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\units\linux\nala.mouse.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Mouse"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="nala.tpoint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.TPoint"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="..\units\linux\nala.xlib.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.XLib"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\units\nala.windowinfo.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.WindowInfo"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="..\units\linux\nala.window.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Window"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="nala.scripttree.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ScriptTree"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="nala.autocomplete.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.AutoComplete"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="nala.scriptparser.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ScriptParser"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="laz\nala.syncompletion.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.SynCompletion"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\units\linux\nala.osutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.OSUtils"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="OSUtils_Header.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="..\units\windows\nala.window.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Window"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\units\windows\nala.osutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.OSUtils"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\units\windows\nala.mouse.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Mouse"/>
+      </Unit42>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="Nala"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit"/>
+      <OtherUnitFiles Value="..\units;..\lape;laz;..\units\imports;..\castalia"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Conditionals Value="if SrcOS = 'unix' then
+begin
+  UnitPath += ';../units/linux/';
+  IncPath += ';../units/linux/';
+end;
+if SrcOS = 'win' then
+begin
+  UnitPath += ';../units/windows/';
+  IncPath += ';../units/windows/';
+end;"/>
+    <CodeGeneration>
+      <Checks>
+        <RangeChecks Value="True"/>
+      </Checks>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <UseHeaptrc Value="True"/>
+      </Debugging>
+    </Linking>
+    <Other>
+      <Verbosity>
+        <ShoLineNum Value="True"/>
+      </Verbosity>
+      <CompilerMessages>
+        <IgnoredMessages idx5024="True" idx4046="True"/>
+      </CompilerMessages>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="7">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+      <Item4>
+        <Name Value="lpException"/>
+      </Item4>
+      <Item5>
+        <Name Value="ESyntaxError"/>
+      </Item5>
+      <Item6>
+        <Name Value="ESpecialException"/>
+      </Item6>
+      <Item7>
+        <Name Value="Exception"/>
+      </Item7>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
