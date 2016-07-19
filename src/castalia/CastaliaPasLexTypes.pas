@@ -300,7 +300,8 @@ const ExTypes = [tokDWORD, tokUnknown];
 const DataTypes = [tokBoolean, tokChar, tokDWORD, tokPChar, tokDouble, tokSingle, tokInt64,
                    tokString, tokAnsiString, tokWideString, tokShortString, tokShortint,
                    tokLongint, tokLongword, tokWord, tokSmallint, tokWideChar, tokExtended,
-                   tokInteger, tokByte, tokByteBool, tokLongBool, tokCardinal];
+                   tokInteger, tokByte, tokByteBool, tokLongBool, tokCardinal, tokVariant,
+                   tokCurrency, tokWordBool];
 
 function TokenName(Value: TptTokenKind): string;
 function tokTokenName(Value: TptTokenKind): string;

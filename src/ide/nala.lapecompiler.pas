@@ -256,7 +256,7 @@ end;
 
 constructor TLPCompiler.Create(AScript: String; UseDump: Boolean);
 var
-  i: Integer;
+  Typ: ELapeBaseType;
 begin
   FUseDump := UseDump;
   FDump := TLPCompilerDump.Create('Lape');
@@ -265,6 +265,11 @@ begin
 
   InitializePascalScriptBasics(Self, [psiSettings, psiExceptions, psiTypeAlias]);
   ExposeGlobals(Self);
+
+  if (FUseDump) then
+    for Typ := Low(ELapeBaseType) to High(ELapeBaseType) do
+      if (FBaseTypes[Typ] <> nil) then
+        AppendDump('type ' + FBaseTypes[Typ].Name + ' = ' + FBaseTypes[Typ].Name);
 end;
 
 destructor TLPCompiler.Destroy;
