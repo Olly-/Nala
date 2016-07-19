@@ -245,7 +245,7 @@
         <UnitName Value="nala.OSUtils"/>
       </Unit38>
       <Unit39>
-        <Filename Value="OSUtils_Header.inc"/>
+        <Filename Value="..\units\osutils_header.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit39>
       <Unit40>
@@ -272,7 +272,7 @@
       <Filename Value="Nala"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit"/>
+      <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit;..\units"/>
       <OtherUnitFiles Value="..\units;..\lape;laz;..\units\imports;..\castalia"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>

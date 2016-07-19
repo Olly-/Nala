@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Windows,
-  nala.WindowBase, nala.CoreTypes, nala.Bitmap;
+  nala.WindowBase, nala.CoreTypes, nala.Bitmap, DwmApi;
 
 type
 
@@ -42,11 +42,11 @@ type
   private
     FCaptionSize, FBorderSize: UInt32;
     FWindowDC: HDC;
-
-    procedure ApplyBorderOffset(var X, Y: Int32);
   public
     function Data(X, Y, AWidth, AHeight: Int32): TWindowData; override;
     procedure BringToFront; override;
+
+    procedure OffsetBorder(var X, Y: UInt32);
 
     function HandleIsVaild: Boolean; override;
 
@@ -58,7 +58,7 @@ type
 implementation
 
 uses
-  nala.OSUtils;
+  nala.OSUtils, JwaWindows;
 
 constructor TNalaWindow.TBuffer.Create(AWidth, AHeight: Integer);
 var
@@ -98,22 +98,26 @@ procedure TNalaWindow.setHandle(AValue: HWND);
 var
   Style: LONG;
 begin
-  if (FHandle <> AValue) then
+  if (AValue <> FHandle) and (IsWindow(AValue)) then
   begin
     FHandle := AValue;
     FWindowDC := GetWindowDC(FHandle);
+    GetWindowThreadProcessId(Handle, @FPID);
 
-    FCaptionSize := 0;
-    FBorderSize := 0;
+    FTopWindow := GetAncestor(FHandle, GA_ROOT);
+    FIsTopWindow := FTopWindow = FHandle;
 
-    Style := GetWindowLong(FHandle, GWL_STYLE);
-    if ((Style and WS_CAPTION) = WS_CAPTION) then
-      FCaptionSize := GetSystemMetrics(SM_CYCAPTION);
-    if ((Style and WS_BORDER) = WS_BORDER) then
-      FBorderSize := GetSystemMetrics(SM_CXFRAME);
+    if (FIsTopWindow) then
+    begin
+      Style := GetWindowLong(FHandle, GWL_STYLE);
+      if ((Style and WS_CAPTION) = WS_CAPTION) then
+        FCaptionSize := GetSystemMetrics(SM_CYCAPTION);
+      if ((Style and WS_BORDER) = WS_BORDER) then
+        FBorderSize := GetSystemMetrics(SM_CXFRAME);
+    end;
 
-    if (Assigned(FBuffer)) then
-      FreeAndNil(FBuffer);
+    if (FBuffer <> nil) then
+      FBuffer.Free;
   end;
 end;
 
@@ -121,26 +125,33 @@ function TNalaWindow.getWidth: Int32;
 var
   r: TRect;
 begin
-  GetWindowRect(FHandle, r);
-  Result := r.Right - r.Left;
-  Result -= FBorderSize + FBorderSize; // Left and right
+  Result := OSUtils.WindowWidth(FHandle);
+  if (FIsTopWindow) then
+    Result -= FBorderSize + FBorderSize;
 end;
 
 function TNalaWindow.getHeight: Int32;
 var
   r: TRect;
 begin
-  GetWindowRect(FHandle, r);
-  Result := r.Bottom - r.Top;
-  Result -= FBorderSize + FBorderSize; // Top and bottom
-  Result -= FCaptionSize;
+  Result := OSUtils.WindowHeight(FHandle);
+
+  if (FIsTopWindow) then
+  begin
+    Result -= FBorderSize + FBorderSize;
+    Result -= FCaptionSize;
+  end;
 end;
 
 function TNalaWindow.getLeft: Int32;
 var
   r: TRect;
 begin
-  GetWindowRect(FHandle, r);
+  if (Win32MajorVersion >= 6) and (DwmCompositionEnabled) then
+    DwmGetWindowAttribute(FHandle, DWMWA_EXTENDED_FRAME_BOUNDS, @r, SizeOf(r))
+  else
+    GetWindowRect(FHandle, r);
+
   Result := r.Left;
 end;
 
@@ -148,17 +159,17 @@ function TNalaWindow.getTop: Int32;
 var
   r: TRect;
 begin
-  GetWindowRect(FHandle, r);
+  if (Win32MajorVersion >= 6) and (DwmCompositionEnabled) then
+    DwmGetWindowAttribute(FHandle, DWMWA_EXTENDED_FRAME_BOUNDS, @r, SizeOf(r))
+  else
+    GetWindowRect(FHandle, r);
+
   Result := r.Top;
 end;
 
 function TNalaWindow.getCaption: String;
-var
-  Buffer: array[0..2048] of Char;
 begin
-  Result := '';
-  if (GetWindowText(FHandle, @Buffer[0], SizeOf(Buffer)) > 0) then
-    Result := String(Buffer);
+  Result := OSUtils.WindowTitle(FHandle);
 end;
 
 procedure TNalaWindow.setCaption(AValue: String);
@@ -185,15 +196,15 @@ begin
   SetFocus(FHandle);
 end;
 
-function TNalaWindow.HandleIsVaild: Boolean;
-begin
-  Result := IsWindow(FHandle);
-end;
-
-procedure TNalaWindow.ApplyBorderOffset(var X, Y: Int32);
+procedure TNalaWindow.OffsetBorder(var X, Y: UInt32);
 begin
   X += FBorderSize;
   Y += FCaptionSize + FBorderSize;
+end;
+
+function TNalaWindow.HandleIsVaild: Boolean;
+begin
+  Result := IsWindow(FHandle);
 end;
 
 constructor TNalaWindow.Create;
@@ -220,59 +231,39 @@ begin
 end;
 
 function TNalaWindow.Data(X, Y, AWidth, AHeight: Int32): TWindowData;
-
-  procedure FixAndWarn(W, H: Int32);
-  const
-    Message = '%s (%d) is outside the windows bounds!';
-  begin
-    if (X < 0) then
-    begin
-      X := 0;
-      Writeln(Format(Message, ['X', X]));
-    end;
-    if (Y < 0) then
-    begin
-      Y := 0;
-      Writeln(Format(Message, ['Y', Y]));
-    end;
-    if (AWidth > W) then
-    begin
-      AWidth := W;
-      Writeln(Format(Message, ['Width', AWidth]));
-    end;
-    if (AHeight > H) then
-    begin
-      AHeight := H;
-      Writeln(Format(Message, ['Height', AHeight]));
-    end;
-  end;
-
 var
   W, H: UInt32;
 begin
-  W := Self.Width;
-  H := Self.Height;
+  Result.Width := 0;
+  Result.Height := 0;
+  Result.BufferPtr := nil;
+  Result.BufferWidth := 0;
+  Result.BufferHeight := 0;
 
-  if (not Assigned(FBuffer)) then
-    FBuffer := TBuffer.Create(W, H);
-  if (FBuffer.Width <> W) or (FBuffer.Height <> H) then
+  if (not IsIconic(FHandle)) then
   begin
-    FBuffer.Free;
-    FBuffer := TBuffer.Create(W, H);
+    W := Self.Width;
+    H := Self.Height;
+
+    if (FBuffer = nil) then
+      FBuffer := TBuffer.Create(W, H);
+    if (FBuffer.Width <> W) or (FBuffer.Height <> H) then
+    begin
+      FBuffer.Free;
+      FBuffer := TBuffer.Create(W, H);
+    end;
+
+    if (FIsTopWindow) then
+      BitBlt(FBuffer.DC, 0, 0, AWidth, AHeight, FWindowDC, FBorderSize + X, FCaptionSize + FBorderSize + Y, SRCCOPY)
+    else
+      BitBlt(FBuffer.DC, 0, 0, AWidth, AHeight, FWindowDC, X, Y, SRCCOPY);
+
+    Result.Width := AWidth;
+    Result.Height := AHeight;
+    Result.BufferPtr := FBuffer.Ptr;
+    Result.BufferWidth := FBuffer.Width;
+    Result.BufferHeight := FBuffer.Height;
   end;
-
-  FixAndWarn(W, H);
-  ApplyBorderOffset(X, Y);
-
-  BitBlt(FBuffer.DC, 0, 0, AWidth, AHeight, FWindowDC, X, Y, SRCCOPY);
-
-  Result.Width := AWidth;
-  Result.Height := AHeight;
-  Result.BufferPtr := FBuffer.Ptr;
-  Result.BufferWidth := FBuffer.Width;
-  Result.BufferHeight := FBuffer.Height;
-
-  Writeln('woo');
 end;
 
 end.

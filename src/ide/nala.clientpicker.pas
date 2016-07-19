@@ -21,6 +21,7 @@ var
   Form: TPickerForm;
   Mouse: TNalaMouse;
   Handle: HWND;
+  X, Y: UInt32;
 begin
   Result := 0;
 
@@ -29,7 +30,6 @@ begin
   Form := TPickerForm.Create;
 
   try
-    writeln('test');
     while (not Mouse.Pressed(nala.MouseBase.mbLeft)) do
     begin
       Handle := OSUtils.WindowFromPoint(Mouse.GetPosition(nil));
@@ -37,7 +37,16 @@ begin
       if (not Form.IsHandle(Handle)) and (Result <> Handle) then
       try
         Window.Handle := Handle;
-        Form.Show(Window.Left, Window.Top, Window.Width, Window.Height);
+
+        {$IFDEF WINDOWS}
+          X := Window.Left;
+          Y := Window.Top;
+          if (Window.IsTopWindow) then
+            Window.OffsetBorder(X, Y);
+          Form.Show(X, Y, Window.Width, Window.Height);
+        {$ELSE}
+          Form.Show(Window.Left, Window.Top, Window.Width, Window.Height);
+        {$ENDIF}
 
         Result := Handle;
       except
@@ -46,7 +55,6 @@ begin
       Application.ProcessMessages;
       Sleep(50);
     end;
-    writeln('done');
   finally
     Window.Free;
     Mouse.Free;

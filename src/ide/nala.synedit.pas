@@ -48,13 +48,15 @@ begin
   Parent := AOwner as TWinControl;
   Align := alClient;
   BorderStyle := bsNone;
-  RightEdge := 90;
   OnSpecialLineMarkup := @DoSpecialLineMarkup;
   Highlighter := SynEditHighlighter;
+  Font.Quality := fqDefault;
 
   Options := [eoAutoIndent, eoScrollPastEol, eoSmartTabs, eoTabsToSpaces,
               eoTrimTrailingSpaces, eoGroupUndo, eoBracketHighlight, eoShowScrollHint] - [eoScrollPastEol];
   Options2 := [eoFoldedCopyPaste, eoOverwriteBlock];
+
+  Gutter.LineNumberPart.MarkupInfo.Background := Gutter.Color;
 
   TSynGutterSeparator.Create(RightGutter.Parts);
   FOverview := TSynGutterLineOverview.Create(RightGutter.Parts);
@@ -80,8 +82,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TNalaSynEdit.ExecuteCommand(Command: TSynEditorCommand;
-  const AChar: TUTF8Char; Data: pointer);
+procedure TNalaSynEdit.ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: pointer);
 begin
   inherited ExecuteCommand(Command, AChar, Data);
 
@@ -144,6 +145,7 @@ end;
 
 initialization
   SynEditHighlighter := TSynFreePascalSyn.Create(nil);
+
 finalization
   SynEditHighlighter.Free;
 
