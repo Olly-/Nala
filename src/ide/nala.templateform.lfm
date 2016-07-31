@@ -1,0 +1,86 @@
+object TemplateForm: TTemplateForm
+  Left = -627
+  Height = 286
+  Top = 643
+  Width = 521
+  BorderIcons = [biSystemMenu, biMinimize]
+  Caption = 'Template Editor'
+  ClientHeight = 286
+  ClientWidth = 521
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '1.6.0.4'
+  object Panel1: TPanel
+    Left = 0
+    Height = 240
+    Top = 0
+    Width = 138
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 240
+    ClientWidth = 138
+    TabOrder = 0
+    object Button1: TButton
+      Left = 4
+      Height = 28
+      Top = 4
+      Width = 130
+      Align = alTop
+      BorderSpacing.Around = 4
+      Caption = 'New Template'
+      OnClick = Button1Click
+      TabOrder = 0
+    end
+    object Button2: TButton
+      Left = 4
+      Height = 30
+      Top = 36
+      Width = 130
+      Align = alTop
+      BorderSpacing.Around = 4
+      Caption = 'Delete Template'
+      OnClick = Button2Click
+      TabOrder = 1
+    end
+    object ListBox: TListBox
+      Left = 4
+      Height = 166
+      Top = 70
+      Width = 130
+      Align = alClient
+      BorderSpacing.Left = 4
+      BorderSpacing.Right = 4
+      BorderSpacing.Bottom = 4
+      ItemHeight = 0
+      OnSelectionChange = ListBoxSelectionChange
+      Sorted = True
+      TabOrder = 2
+    end
+  end
+  object Notebook: TNotebook
+    Left = 138
+    Height = 240
+    Top = 0
+    Width = 383
+    Align = alClient
+    TabOrder = 1
+    TabStop = True
+  end
+  object ButtonPanel1: TButtonPanel
+    Left = 6
+    Height = 34
+    Top = 246
+    Width = 509
+    OKButton.Name = 'OKButton'
+    OKButton.DefaultCaption = True
+    OKButton.OnClick = OKButtonClick
+    HelpButton.Name = 'HelpButton'
+    HelpButton.DefaultCaption = True
+    CloseButton.Name = 'CloseButton'
+    CloseButton.DefaultCaption = True
+    CancelButton.Name = 'CancelButton'
+    CancelButton.DefaultCaption = True
+    TabOrder = 2
+    ShowButtons = [pbOK, pbCancel]
+  end
+end

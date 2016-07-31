@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Controls, SynEdit, SynEditMarkup, SynEditTypes, SynEditMiscClasses,
   SynGutterLineOverview, SynEditKeyCmds, LCLType, Types, SynGutter, SynHighlighterLape,
-  nala.AutoComplete;
+  nala.AutoComplete, Dialogs;
 
 type
   { TNalaSynEdit }
@@ -34,14 +34,12 @@ type
 implementation
 
 uses
-  Graphics, Forms;
+  Graphics, Forms, LazFileUtils;
 
 var
   SynEditHighlighter: TSynFreePascalSyn;
 
 constructor TNalaSynEdit.Create(AOwner: TComponent);
-var
-  i: Integer;
 begin
   inherited Create(AOwner);
 

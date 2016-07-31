@@ -38,17 +38,21 @@ begin
       try
         Window.Handle := Handle;
 
-        {$IFDEF WINDOWS}
+        if (Window.HandleIsVaild) then
+        begin
+          {$IFDEF WINDOWS}
+          writeln('test');
           X := Window.Left;
-          Y := Window.Top;
-          if (Window.IsTopWindow) then
-            Window.OffsetBorder(X, Y);
-          Form.Show(X, Y, Window.Width, Window.Height);
-        {$ELSE}
-          Form.Show(Window.Left, Window.Top, Window.Width, Window.Height);
-        {$ENDIF}
+            Y := Window.Top;
+            if (Window.IsTopWindow) then
+              Window.OffsetBorder(X, Y);
+            Form.Show(X, Y, Window.Width, Window.Height);
+          {$ELSE}
+            Form.Show(Window.Left, Window.Top, Window.Width, Window.Height);
+          {$ENDIF}
 
-        Result := Handle;
+          Result := Handle;
+        end;
       except
       end;
 

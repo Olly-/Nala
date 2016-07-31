@@ -79,7 +79,7 @@ type
 implementation
 
 uses
-  strutils, nala.Helpers, Forms, nala.Strings, nala.CoreTypes;
+  strutils, nala.Helpers, Forms, nala.Strings, nala.Types;
 
 { TTypeTree }
 
@@ -299,7 +299,7 @@ end;
 
 function TNalaAutoComplete.GetExpression: String;
 var
-  p, i: Integer;
+  i: Integer;
   Inside: Boolean;
   Text: String;
 begin
@@ -460,7 +460,7 @@ var
   i: Integer;
 begin
   for i := 0 to Decl.ParameterCount - 1 do
-     FItems.AddObject(Decl.Parameter[i].Name, TItemData.Create('param', ': ', Decl.Parameter[i].Name, Decl.Parameter[i].Typ));
+    FItems.AddObject(Decl.Parameter[i].Name, TItemData.Create('param', ': ', Decl.Parameter[i].Name, Decl.Parameter[i].Typ));
 end;
 
 procedure TNalaAutoComplete.AddSelf(Typ: String);
@@ -491,15 +491,12 @@ begin
   Result.X := FColumnWidth + ACanvas.PrettyTextExtent(TItemData(ItemList.Objects[Index]).FPaintString).cx;
 end;
 
-
 procedure TNalaAutoComplete.DoSearch(var APosition: Integer);
 var
   i: Integer;
   Curr: String;
   CurrLen: Integer;
 begin
-  APosition := 0;
-
   ItemList.BeginUpdate;
   ItemList.Clear;
 
@@ -515,6 +512,11 @@ begin
     ItemList.AddStrings(FItems);
 
   ItemList.EndUpdate;
+
+  if (ItemList.Count = 0) then
+    APosition := -1
+  else
+    APosition := 0;
 end;
 
 procedure TNalaAutoComplete.DoExecute(Sender: TObject);
@@ -533,7 +535,6 @@ begin
     FillItems(GetExpression());
 
     DoSearch(Pos);
-    Position := 0;
   finally
     ItemList.EndUpdate;
     FItems.EndUpdate;

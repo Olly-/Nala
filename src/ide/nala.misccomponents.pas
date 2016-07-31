@@ -190,12 +190,8 @@ end;
 
 procedure TNalaCustomButton.PaintBackground(var PaintRect: TRect);
 begin
-  //if (ButtonBitmap.Width <> Width) or (ButtonBitmap.Height <> Height) then
-  //  raise Exception.Create('We don''t have a button bitmap for this button size!');
   if (Width = 24) then
-    Canvas.Draw(PaintRect.Left, PaintRect.Top, Button24)
-  else
-    Canvas.Draw(PaintRect.Left, PaintRect.Top, Button22)
+    Canvas.Draw(PaintRect.Left, PaintRect.Top, Button24);
 end;
 
 function TNalaValueList.getCells(ACol, ARow: Integer): string;

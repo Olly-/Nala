@@ -8,7 +8,7 @@ interface
 
 uses
   Classes, SysUtils,
-  nala.CoreTypes;
+  nala.Types;
 
 type
 

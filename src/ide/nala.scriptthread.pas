@@ -82,15 +82,21 @@ end;
 
 procedure TNalaScriptThread.Execute;
 
-  function DoImporting: Boolean;
+  function DoCreate: Boolean;
   begin
+    Result := True;
+
     try
-      FCompiler.Import([lpiCore, lpiBox, lpiString, lpiTime], Self);
-      Result := True;
+      FCompiler := TLPCompiler.Create(FScript, AllImports, Self);
     except
+      on e: lpException do
+      begin
+        MessageWriteLn('Creating error (Lape): ' + e.Message, mtError);
+        Result := False;
+      end;
       on e: Exception do
       begin
-        MessageWriteLn('Failed to add imports: ' + e.Message, mtError);
+        MessageWriteLn('Creating error (FPC): ' + e.Message, mtError);
         Result := False;
       end;
     end;
@@ -109,12 +115,12 @@ procedure TNalaScriptThread.Execute;
     except
       on e: lpException do
       begin
-        MessageWriteLn('Failed to compile: ' + e.Message, mtError);
+        MessageWriteLn('Compiling error (Lape): ' + e.Message, mtError);
         Result := False;
       end;
       on e: Exception do
       begin
-        MessageWriteLn('Failed to compile: ' + e.Message, mtError);
+        MessageWriteLn('Compiling error (FPC): ' + e.Message, mtError);
         Result := False;
       end;
     end;
@@ -124,46 +130,41 @@ var
   Failed: Boolean = True;
   StartTime: record Ticks: UInt64; Time: Double; end;
 begin
-  FCompiler := TLPCompiler.Create(FScript);
-
-  with FCompiler do
+  if (DoCreate) and (DoCompile) then
   begin
-    if (DoImporting()) and (DoCompile()) then
-    begin
-      if (FCompileOnly) then
-        Exit;
+    if (FCompileOnly) then
+      Exit;
 
-      StartTime.Time := OSUtils.MarkTime;
-      StartTime.Ticks := GetTickCount64;
+    StartTime.Time := OSUtils.MarkTime;
+    StartTime.Ticks := GetTickCount64;
 
-      FRunning := bTrue;
+    FRunning := bTrue;
 
-      try
-        RunCode(FCompiler.Emitter.Code, FRunning);
-        Failed := False;
-      except
-        on e: lpException do
-          MessageWriteLn('Runtime error (Lape): ' + e.Message, mtError);
-        on e: Exception do
-          MessageWriteLn('Runtime error (FPC): ' + e.Message, mtError);
-      end;
-
-      if (not Failed) then
-      begin
-        if ((GetTickCount64() - StartTime.Ticks) <= 60000) then
-          MessageWriteLn('Succesfully executed (' + FormatFloat('0.000', OSUtils.MarkTime() - StartTime.Time) + ' ms)')
-        else
-          MessageWriteLn('Succesfully executed (' + ConvertMilliseconds(GetTickCount64() - StartTime.Ticks, mfLong, [mffSeconds]) + ')');
-      end else
-        MessageWriteLn('Failed execution', mtError);
+    try
+      RunCode(FCompiler.Emitter.Code, FRunning);
+      Failed := False;
+    except
+      on e: lpException do
+        MessageWriteLn('Runtime error (Lape): ' + e.Message, mtError);
+      on e: Exception do
+        MessageWriteLn('Runtime error (FPC): ' + e.Message, mtError);
     end;
+
+    if (not Failed) then
+    begin
+      if ((GetTickCount64() - StartTime.Ticks) <= 60000) then
+        MessageWriteLn('Succesfully executed (' + FormatFloat('0.000', OSUtils.MarkTime() - StartTime.Time) + ' ms)')
+      else
+        MessageWriteLn('Succesfully executed (' + ConvertMilliseconds(GetTickCount64() - StartTime.Ticks, mfLong, [mffSeconds]) + ')');
+    end else
+      MessageWriteLn('Failed execution', mtError);
   end;
 end;
 
 procedure TNalaScriptThread.DoTerminate;
 begin
   Writeln('Script thread[', ThreadID, '] safely terminated');
-  if (Assigned(FCompiler)) then
+  if (FCompiler <> nil) then
     FCompiler.Free;
 
   inherited DoTerminate;

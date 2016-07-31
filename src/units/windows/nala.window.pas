@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Windows,
-  nala.WindowBase, nala.CoreTypes, nala.Bitmap, DwmApi;
+  nala.WindowBase, nala.Types, nala.Bitmap, DwmApi;
 
 type
 
@@ -131,8 +131,6 @@ begin
 end;
 
 function TNalaWindow.getHeight: Int32;
-var
-  r: TRect;
 begin
   Result := OSUtils.WindowHeight(FHandle);
 

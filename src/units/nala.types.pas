@@ -1,4 +1,4 @@
-unit nala.CoreTypes;
+unit nala.Types;
 
 {$mode objfpc}{$H+}
 {$modeswitch advancedrecords}

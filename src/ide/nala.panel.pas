@@ -12,7 +12,12 @@ type
   { TNalaPanel }
 
   TNalaPanel = class(TForm)
+  private
+    function GetSite: TAnchorDockHostSite;
   public
+    property Site: TAnchorDockHostSite read GetSite;
+
+    procedure ToggleVisible;
     procedure PaintDockHeader(Sender: TObject);
     procedure InitHeader;
 
@@ -34,7 +39,22 @@ begin
   Caption := AName;
 
   DockMaster.MakeDockable(Self);
-  DockMaster.GetAnchorSite(Self).Header.Color := clForm;
+  Site.Header.Color := clForm;
+end;
+
+function TNalaPanel.GetSite: TAnchorDockHostSite;
+begin
+  Result := DockMaster.GetAnchorSite(Self);
+end;
+
+procedure TNalaPanel.ToggleVisible;
+begin
+  if (Site.Showing) then
+  begin
+    DockMaster.ManualFloat(Self);
+    Site.Hide;
+  end else
+    Site.Show;
 end;
 
 procedure TNalaPanel.PaintDockHeader(Sender: TObject);

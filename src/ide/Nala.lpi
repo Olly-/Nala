@@ -32,19 +32,22 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="4">
+    <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="aggpaslcl"/>
+        <PackageName Value="LazControls"/>
       </Item1>
       <Item2>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="aggpaslcl"/>
       </Item2>
       <Item3>
-        <PackageName Value="anchordocking"/>
+        <PackageName Value="SynEdit"/>
       </Item3>
       <Item4>
-        <PackageName Value="LCL"/>
+        <PackageName Value="anchordocking"/>
       </Item4>
+      <Item5>
+        <PackageName Value="LCL"/>
+      </Item5>
     </RequiredPackages>
     <Units Count="43">
       <Unit0>
@@ -90,9 +93,9 @@
         <UnitName Value="nala.Helpers"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\units\nala.coretypes.pas"/>
+        <Filename Value="..\units\nala.types.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.CoreTypes"/>
+        <UnitName Value="nala.Types"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\units\nala.strings.pas"/>
@@ -220,48 +223,51 @@
         <UnitName Value="nala.Window"/>
       </Unit33>
       <Unit34>
-        <Filename Value="nala.scripttree.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.ScriptTree"/>
-      </Unit34>
-      <Unit35>
         <Filename Value="nala.autocomplete.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.AutoComplete"/>
-      </Unit35>
-      <Unit36>
+      </Unit34>
+      <Unit35>
         <Filename Value="nala.scriptparser.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.ScriptParser"/>
-      </Unit36>
-      <Unit37>
+      </Unit35>
+      <Unit36>
         <Filename Value="laz\nala.syncompletion.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.SynCompletion"/>
-      </Unit37>
-      <Unit38>
+      </Unit36>
+      <Unit37>
         <Filename Value="..\units\linux\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit38>
-      <Unit39>
+      </Unit37>
+      <Unit38>
         <Filename Value="..\units\osutils_header.inc"/>
         <IsPartOfProject Value="True"/>
-      </Unit39>
-      <Unit40>
+      </Unit38>
+      <Unit39>
         <Filename Value="..\units\windows\nala.window.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Window"/>
-      </Unit40>
-      <Unit41>
+      </Unit39>
+      <Unit40>
         <Filename Value="..\units\windows\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit41>
-      <Unit42>
+      </Unit40>
+      <Unit41>
         <Filename Value="..\units\windows\nala.mouse.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Mouse"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="nala.templateform.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="TemplateForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="nala.TemplateForm"/>
       </Unit42>
     </Units>
   </ProjectOptions>
@@ -269,7 +275,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="Nala"/>
+      <Filename Value="../../Nala"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit;..\units"/>

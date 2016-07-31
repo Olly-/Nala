@@ -53,8 +53,7 @@ type
 implementation
 
 uses
-  nala.AnchorDocking, nala.MainForm, nala.ClientPicker, nala.Mouse, nala.OSUtils, nala.WindowInfo, nala.TBox,
-  nala.Window;
+  nala.AnchorDocking, nala.MainForm, nala.ClientPicker, nala.Mouse, nala.Window;
 
 { TUpdateThread }
 

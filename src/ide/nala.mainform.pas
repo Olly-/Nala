@@ -1,16 +1,17 @@
 unit nala.MainForm;
 
-{$DEFINE HEAPTRC} // + Enable in project options / debugging
+{$DEFINE HEAPTRC} { + Enable in project options / debugging }
 
 {$mode objfpc}{$H+}
+{$modeswitch advancedrecords}
 
 interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  AnchorDockStorage, Types, XMLPropStorage, ComCtrls, ExtCtrls, Menus, LCLIntf, LCLType,
-  nala.AnchorDocking, nala.Panel, nala.ScriptTab, nala.ClientPanel, nala.ColorPanel, nala.CoreTypes,
-  nala.Window, nala.Bitmap, nala.CodeExplorer, nala.LapeCompiler
+  AnchorDockStorage, XMLPropStorage, ComCtrls, ExtCtrls, Menus, LCLIntf, LCLType,
+  nala.AnchorDocking, nala.Panel, nala.ScriptTab, nala.ClientPanel, nala.ColorPanel,
+  nala.Types, nala.CodeExplorer, nala.Environment
   {$IFDEF HEAPTRC},
     heaptrc
   {$ENDIF};
@@ -25,15 +26,27 @@ type
     Images22x22: TImageList;
     Images16x16: TImageList;
     MainMenu: TMainMenu;
-    MenuItem1: TMenuItem;
-    MenuItem2: TMenuItem;
-    MenuItem3: TMenuItem;
-    MenuItem4: TMenuItem;
-    MenuItem5: TMenuItem;
-    MenuItem6: TMenuItem;
-    MenuItem7: TMenuItem;
-    MI_Messages: TMenuItem;
-    MI_Explorer: TMenuItem;
+    Menu_Tools_Templates: TMenuItem;
+    Menu_Tools: TMenuItem;
+    Menu_File: TMenuItem;
+    Menu_Script: TMenuItem;
+    Menu_View: TMenuItem;
+    Menu_File_Open: TMenuItem;
+    Menu_File_OpenRecent: TMenuItem;
+    Menu_File_SaveAs: TMenuItem;
+    Menu_File_Save: TMenuItem;
+    Menu_File_Divider: TMenuItem;
+    Menu_File_OpenTemplate: TMenuItem;
+    Menu_View_Reset: TMenuItem;
+    Menu_View_Open: TMenuItem;
+    Menu_View_Save: TMenuItem;
+    Menu_View_Divider: TMenuItem;
+    Menu_View_Colors: TMenuItem;
+    Menu_View_Client: TMenuItem;
+    Menu_View_Messages: TMenuItem;
+    Menu_View_Explorer: TMenuItem;
+    OpenDialog: TOpenDialog;
+    SaveDialog: TSaveDialog;
     ToolBar: TToolBar;
     btnNewScript: TToolButton;
     btnOpenScript: TToolButton;
@@ -45,24 +58,25 @@ type
     tbSeperator2: TToolButton;
     tbSeperator3: TToolButton;
 
-    procedure btnOpenScriptClick(Sender: TObject);
     procedure DoButtonClick(Sender: TObject);
-    procedure DoMenuClick(Sender: TObject);
-    procedure DoWindowShow(Sender: TObject);
+    procedure MenuViewClick(Sender: TObject);
+    procedure MenuFileClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure MenuToolsClick(Sender: TObject);
+    procedure Menu_FileClick(Sender: TObject);
   private
     FButtonState: EButtonState;
     FScriptTabs: TNalaTabs;
-    FMinHeight, FMinWidth: UInt32;
     FExplorerPanel, FEditorPanel, FMessagePanel: TNalaPanel;
     FClientPanel: TNalaClientPanel;
     FColorPanel: TNalaColorPanel;
     FCodeExplorer: TNalaCodeExplorer;
 
-    procedure setButtonState(AValue: EButtonState);
+    procedure SetButtonState(AValue: EButtonState);
 
     procedure CreateDocking;
     procedure DefaultDocking(Reset: Boolean);
+    procedure DoDockingChange(Sender: TAnchorDockHostSite; AShowing: Boolean);
   public
     property ExplorerPanel: TNalaPanel read FExplorerPanel;
     property EditorPanel: TNalaPanel read FEditorPanel;
@@ -71,8 +85,9 @@ type
     property ColorPanel: TNalaColorPanel read FColorPanel;
 
     property CodeExplorer: TNalaCodeExplorer read FCodeExplorer;
+    property ScriptTabs: TNalaTabs read FScriptTabs;
 
-    property ButtonState: EButtonState read FButtonState write setButtonState;
+    property ButtonState: EButtonState read FButtonState write SetButtonState;
   end;
 
 var
@@ -81,10 +96,7 @@ var
 implementation
 
 uses
-  LazFileUtils, nala.OSUtils;
-
-const
-  BUILD_INFO = 'Built on : ' + {$I %DATE%} + LineEnding + 'with FPC version: ' + {$I %FPCVERSION%};
+  LazFileUtils, nala.TemplateForm;
 
 {$R *.lfm}
 
@@ -92,74 +104,113 @@ const
 
 procedure TNalaForm.FormCreate(Sender: TObject);
 begin
-  Writeln('Create: Docking');
-  CreateDocking();
+  CreateDocking;
   DefaultDocking(False);
 
-  Writeln('Create: Explorer');
   FCodeExplorer := TNalaCodeExplorer.Create(Self);
   FCodeExplorer.Parent := FExplorerPanel;
   FCodeExplorer.Align := alClient;
 
-  Writeln('Create: Tabs');
   FScriptTabs := TNalaTabs.Create(FEditorPanel);
-  FScriptTabs.Add('Tab 1', DEFAULT_SCRIPT);
-  FScriptTabs.Add('Tab 2', DEFAULT_SCRIPT);
+  FScriptTabs.AddTab;
+
+  SetButtonState(bsStoppedScript);
 end;
 
-procedure TNalaForm.DoMenuClick(Sender: TObject);
+procedure TNalaForm.MenuToolsClick(Sender: TObject);
 begin
-  if (Sender.Equals(MenuItem4)) then
-    DefaultDocking(True);
+  TemplateForm.ShowModal;
 end;
 
-procedure TNalaForm.DoWindowShow(Sender: TObject);
-
-  procedure DoShow(Panel: TNalaPanel);
-  begin
-    if (Panel.Showing) then
-    begin
-      DockMaster.ManualFloat(Panel);
-      DockMaster.GetSite(Panel).Hide
-    end
-    else
-      DockMaster.GetSite(Panel).Show;
-  end;
-
+procedure TNalaForm.Menu_FileClick(Sender: TObject);
+var
+  i: Int32;
+  Files: TStringList;
+  Item: TMenuItem;
 begin
+  Menu_File_OpenTemplate.Clear;
+  Files := FindAllFiles(NalaEnvironment.Paths['Templates'], '*.nala');
 
-  if (Sender = MI_Explorer) then
-    DoShow(FExplorerPanel);
-end;
-
-procedure TNalaForm.btnOpenScriptClick(Sender: TObject);
-begin
-  with TFileDialog.Create(nil) do
   try
-    Filter := '*.(pas|pp|inc|nala)';
-    if (Execute) then
-      FScriptTabs.Add(FileName);
+    for i := 0 to Files.Count - 1 do
+    begin
+      Item := TMenuItem.Create(Menu_File_OpenTemplate);
+      Item.Caption := ExtractFileNameWithoutExt(ExtractFileName(Files[i]));
+      Item.OnClick := @MenuFileClick;
+
+      Menu_File_OpenTemplate.Add(Item);
+    end;
   finally
-    Free;
+    Files.Free;
   end;
+end;
+
+procedure TNalaForm.MenuViewClick(Sender: TObject);
+begin
+  if (Sender = Menu_View_Reset) then
+    DefaultDocking(True)
+  else
+  if (Sender = Menu_View_Open) then
+    FScriptTabs.LoadTab
+  else
+  if (Sender = Menu_View_Save) then
+    FScriptTabs.ActiveTab.Save
+  else
+  if (Sender = Menu_View_Explorer) then
+    FExplorerPanel.ToggleVisible
+  else
+  if (Sender = Menu_View_Client) then
+    FClientPanel.ToggleVisible
+  else
+  if (Sender = Menu_View_Messages) then
+    FMessagePanel.ToggleVisible
+  else
+  if (Sender = Menu_View_Colors) then
+    FColorPanel.ToggleVisible;
+end;
+
+procedure TNalaForm.MenuFileClick(Sender: TObject);
+begin
+  if (Sender = Menu_File_Open) then
+    FScriptTabs.LoadTab
+  else
+  if (Sender = Menu_File_OpenRecent) then
+    { nothing }
+  else
+  if (Sender = Menu_File_OpenTemplate) then
+    { nothing }
+  else
+  if (Sender = Menu_File_SaveAs) then
+    FScriptTabs.ActiveTab.SaveAs
+  else
+  if (Sender = Menu_File_Save) then
+    FScriptTabs.ActiveTab.Save
+  else
+    FScriptTabs.LoadTab(NalaEnvironment.Paths['Templates'] + TMenuItem(Sender).Caption + '.nala');
 end;
 
 procedure TNalaForm.DoButtonClick(Sender: TObject);
 begin
-  if (Sender.Equals(btnPlayScript)) then
+  if (Sender = btnPlayScript) then
     FScriptTabs.ActiveTab.RunScript
   else
-  if (Sender.Equals(btnCompile)) then
+  if (Sender = btnCompile) then
     FScriptTabs.ActiveTab.CompileScript
   else
-  if (Sender.Equals(btnStopScript)) then
+  if (Sender = btnStopScript) then
     FScriptTabs.ActiveTab.StopScript
   else
-  if (Sender.Equals(btnNewScript)) then
-    FScriptTabs.Add('default', DEFAULT_SCRIPT);
+  if (Sender = btnNewScript) then
+    FScriptTabs.AddTab
+  else
+  if (Sender = btnOpenScript) then
+    FScriptTabs.LoadTab
+  else
+  if (Sender = btnSaveScript) then
+    FScriptTabs.ActiveTab.Save;
 end;
 
-procedure TNalaForm.setButtonState(AValue: EButtonState);
+procedure TNalaForm.SetButtonState(AValue: EButtonState);
 
   procedure NormalStop;
   begin
@@ -212,6 +263,7 @@ var
 begin
   DockMaster.MakeDockSite(Self, [akBottom], admrpChild);
   DockMaster.HideHeaderCaptionFloatingControl := False;
+  DockMaster.OnSiteVisibilityChange := @DoDockingChange;
 
   // Lazarus fix
   if (DockManager is TAnchorDockManager) then
@@ -225,9 +277,6 @@ begin
   FMessagePanel := TNalaPanel.Create(Self, 'Messages');
   FClientPanel := TNalaClientPanel.Create(Self, 'Client');
   FColorPanel := TNalaColorPanel.Create(Self, 'Colors');
-
-  FMinWidth := 500;
-  FMinHeight := 300;
 end;
 
 procedure TNalaForm.DefaultDocking(Reset: Boolean);
@@ -288,29 +337,54 @@ begin
   end;
 end;
 
+procedure TNalaForm.DoDockingChange(Sender: TAnchorDockHostSite; AShowing: Boolean);
+begin
+  if (Sender = FExplorerPanel.Site) then
+    Menu_View_Explorer.Checked := AShowing
+  else
+  if (Sender = FColorPanel.Site) then
+    Menu_View_Colors.Checked := AShowing
+  else
+  if (Sender = FClientPanel.Site) then
+    Menu_View_Client.Checked := AShowing
+  else
+  if (Sender = FMessagePanel.Site) then
+    Menu_View_Messages.Checked := AShowing;
+end;
+
+{$IFDEF HEAPTRC}
+procedure TraceMemoryLeaks;
 var
   Path: String;
+begin
+  Path := NalaEnvironment.Files['MemoryLeaks'];
+  Writeln('Writing memory leaks to: ', Path);
+
+  if (FileExists(Path)) then
+  begin
+    with TStringList.Create do
+    try
+      LoadFromFile(Path);
+      if (Text <> '') and (Pos('0 unfreed memory blocks', Text) = 0) then
+        ShowMessage('Last run leaked memory, see: ' + LineEnding + Path);
+      Clear;
+      SaveToFile(Path);
+    finally
+      Free;
+    end;
+  end else
+    FileCreateUTF8(Path);
+
+  SetHeapTraceOutput(Path);
+end;
+{$ENDIF}
 
 initialization
-  Writeln(BUILD_INFO);
+  Writeln('Build date: ' + {$I %DATE%});
+  Writeln('FPC version: ' + {$I %FPCVERSION%});
 
   {$IFDEF HEAPTRC}
-    Path := GetCurrentDirUTF8() + DirectorySeparator + 'ML.txt';
-    Writeln('HEAPTRC defined; writing memory leaks to ', Path);
-
-    if (FileExists(Path)) then
-      with TStringList.Create do
-      try
-        LoadFromFile(Path);
-        if (Text <> '') and (Pos('0 unfreed memory blocks', Text) = 0) then
-          ShowMessage('Last run leaked memory, see: ' + LineEnding + Path);
-        Clear;
-        SaveToFile(Path);
-      finally
-        Free;
-      end;
-
-    SetHeapTraceOutput(Path);
+    TraceMemoryLeaks;
   {$ENDIF}
 
 end.

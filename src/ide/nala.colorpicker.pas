@@ -33,7 +33,7 @@ type
     procedure DoPaintImage(Sender: TObject);
   public
     property DesktopImage: TImage write FImageDeskop;
-    procedure Update(MousePos: TPoint);
+    procedure Update(MousePos: TPoint); overload;
 
     constructor CreateNew(AOwner: TComponent; Num: Integer = 0); override;
   end;

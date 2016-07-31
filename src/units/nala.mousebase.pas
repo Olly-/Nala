@@ -5,7 +5,7 @@ unit nala.MouseBase;
 interface
 
 uses
-  Classes, SysUtils, nala.CoreTypes, nala.TPoint, nala.Window;
+  Classes, SysUtils, nala.Types, nala.TPoint, nala.Window;
 
 type
   EMouseButton = (mbLeft, mbRight, mbMiddle, mbScrollUp, mbScrollDown);

@@ -303,6 +303,8 @@ type
     procedure SetParent(NewParent: TWinControl); override;
     function HeaderNeedsShowing: boolean;
     procedure DoClose(var CloseAction: TCloseAction); override;
+    procedure DoShow; override;
+    procedure DoHide; override;
     function CanUndock: boolean;
     procedure Undock;
     function CanMerge: boolean;
@@ -482,6 +484,7 @@ type
   TADCreateControlEvent = procedure(Sender: TObject; aName: string;
                 var AControl: TControl; DoDisableAutoSizing: boolean) of object;
   TADShowDockMasterOptionsEvent = function(aDockMaster: TAnchorDockMaster): TModalResult;
+  TADSiteVisibilityChangeEvent = procedure(Site: TAnchorDockHostSite; Visible: Boolean) of object;
 
   TAnchorDockMaster = class(TComponent)
   private
@@ -517,6 +520,7 @@ type
     FSiteClass: TAnchorDockHostSiteClass;
     FSplitterClass: TAnchorDockSplitterClass;
     FSplitterWidth: integer;
+    FOnSiteVisibilityChange: TADSiteVisibilityChangeEvent;
     fNeedSimplify: TFPList; // list of TControl
     fNeedFree: TFPList; // list of TControl
     fSimplifying: boolean;
@@ -641,6 +645,8 @@ type
     property QueueSimplify: Boolean read FQueueSimplify write SetQueueSimplify;
 
     property OnCreateControl: TADCreateControlEvent read FOnCreateControl write FOnCreateControl;
+
+    property OnSiteVisibilityChange: TADSiteVisibilityChangeEvent read FOnSiteVisibilityChange write FOnSiteVisibilityChange;
 
     // options
     property OnShowOptions: TADShowDockMasterOptionsEvent read FOnShowOptions write FOnShowOptions;
@@ -2477,6 +2483,7 @@ begin
   FPageControlClass:=TAnchorDockPageControl;
   FPageClass:=TAnchorDockPage;
   FRestoreLayouts:=TAnchorDockRestoreLayouts.Create;
+  FOnSiteVisibilityChange:=nil;
 end;
 
 destructor TAnchorDockMaster.Destroy;
@@ -4451,6 +4458,20 @@ end;
 procedure TAnchorDockHostSite.DoClose(var CloseAction: TCloseAction);
 begin
   inherited DoClose(CloseAction);
+end;
+
+procedure TAnchorDockHostSite.DoShow;
+begin
+  inherited DoShow;
+  if (DockMaster <> nil) and (DockMaster.OnSiteVisibilityChange <> nil) then
+    DockMaster.OnSiteVisibilityChange(Self, True);
+end;
+
+procedure TAnchorDockHostSite.DoHide;
+begin
+  inherited DoHide;
+  if (DockMaster <> nil) and (DockMaster.OnSiteVisibilityChange <> nil) then
+    DockMaster.OnSiteVisibilityChange(Self, False);
 end;
 
 function TAnchorDockHostSite.CanUndock: boolean;

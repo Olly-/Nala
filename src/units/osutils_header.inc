@@ -1,5 +1,5 @@
 uses
-  Classes, SysUtils, nala.CoreTypes, LCLType;
+  Classes, SysUtils, nala.Types, LCLType;
 
 type
 

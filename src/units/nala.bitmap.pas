@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, GraphType, Graphics, FPWritePNG, FPReadPNG, FPimage, IntfGraphics, base64,
-  nala.CoreTypes;
+  nala.Types;
 
 type
 

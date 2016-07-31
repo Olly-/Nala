@@ -5,7 +5,7 @@ unit nala.Mouse;
 interface
 
 uses
-  Classes, SysUtils, nala.MouseBase, nala.Window, nala.CoreTypes;
+  Classes, SysUtils, nala.MouseBase, nala.Window, nala.Types;
 
 type
 
@@ -41,7 +41,7 @@ begin
 
 end;
 
-function TNalaMouse.GetPosition(NalaWindow: TNalaWindow): nala.CoreTypes.TPoint;
+function TNalaMouse.GetPosition(NalaWindow: TNalaWindow): nala.Types.TPoint;
 var
   pt: Windows.TPOINT;
 begin

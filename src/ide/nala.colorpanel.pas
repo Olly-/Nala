@@ -32,7 +32,7 @@ type
 implementation
 
 uses
-  nala.ColorMath, nala.MainForm, nala.ColorPicker, nala.CoreTypes;
+  nala.ColorMath, nala.MainForm, nala.ColorPicker, nala.Types;
 
 { TNalaColorPanel }
 

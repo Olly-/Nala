@@ -25,7 +25,7 @@ begin
   Result := JwaWindows.GetDesktopWindow;
 end;
 
-function TOSUtils.WindowFromPoint(Point: nala.CoreTypes.TPoint): HWND;
+function TOSUtils.WindowFromPoint(Point: nala.Types.TPoint): HWND;
 var
   pt: JwaWindows.POINT;
 begin

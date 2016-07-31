@@ -8,31 +8,32 @@ interface
 uses
   Classes, SysUtils,
   lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree,
-  nala.Dictionary;
+  nala.Types, nala.Dictionary, lpexceptions;
 
 type
 
   { TLPCompilerDump }
 
   TLPCompilerDump = class(TObject)
-  public
-  type
-    TStringListArray = array of TStringList;
   private
   type
     TDict = specialize TDictionary<String, TStringList>;
   private
-    FDict: TDict;
+    FDictionary: TDict;
     FCurrent: TStringList;
 
-    procedure Add(Decl: String);
-    function GetDump(ASection: String): TStringList;
-    procedure SetSection(AValue: String);
+    function GetSectionDump(Name: String): String;
+    procedure SetSection(Name: String);
+  public
+  type
+    TCallback = procedure(Name: String; constref SectionDump: String) of object;
   public
     property Section: String write SetSection;
-    property Dump[ASection: String]: TStringList read GetDump; default;
-    function Sections: TStringArray;
-    function All: String;
+    property SectionDump[Name: String]: String read GetSectionDump;
+
+    procedure Add(constref Text: String);
+    function Merged: String;
+    procedure TraverseSections(Callback: TCallback);
 
     constructor Create(BaseSection: String);
     destructor Destroy; override;
@@ -43,33 +44,38 @@ type
   TLPImport = (lpiCore, lpiTime, lpiString, lpiBox);
   TLPImports = set of TLPImport;
 
+const
+  AllImports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox];
 
+type
   TLPCompiler = class(TLapeCompiler)
   private
     FDump: TLPCompilerDump;
-    FUseDump: Boolean;
+    FDumping: Boolean;
 
-    procedure AppendDump(Str: String);
+    procedure AppendDump(constref Str: String);
   public
-    function addGlobalFunc(AHeader: lpString; Value: Pointer): TLapeGlobalVar; overload; override;
-    function addGlobalType(Str: lpString; AName: lpString): TLapeType; overload; override;
-    function addGlobalType(Typ: TLapeType; AName: lpString=''; ACopy: Boolean = True): TLapeType; overload; override;
-    function addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar; overload; override;
-    function addDelayedCode(ACode: lpString; AFileName: lpString = ''; AfterCompilation: Boolean = True; IsGlobal: Boolean = True): TLapeTree_Base; override;
+    function addGlobalFunc(AHeader: lpString; Value: Pointer): TLapeGlobalVar; override;
+    function addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar; override;
+
+    function addGlobalType(Str: lpString; AName: lpString): TLapeType; override;
+    function addGlobalType(Typ: TLapeType; AName: lpString=''; ACopy: Boolean = True): TLapeType; override;
 
     function addGlobalVar(Value: Extended; AName: lpString): TLapeGlobalVar; override;
     function addGlobalVar(Value: Int32; AName: lpString): TLapeGlobalVar; override;
     function addGlobalVar(Value: UInt32; AName: lpString): TLapeGlobalVar; override;
+    function addGlobalVar(Value: AnsiString; AName: lpString): TLapeGlobalVar; override;
 
     function addGlobalConst(Value: UInt32; AName: lpString): TLapeGlobalVar; overload;
     function addGlobalConst(Value: Int32; AName: lpString): TLapeGlobalVar; overload;
     function addGlobalConst(Value: Extended; AName: lpString): TLapeGlobalVar; overload;
+    function addGlobalConst(Value: AnsiString; AName: lpString): TLapeGlobalVar; overload;
 
-    procedure Import(Imports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox]; Thread: TThread = nil);
+    function addDelayedCode(ACode: lpString; AFileName: lpString = ''; AfterCompilation: Boolean = True; IsGlobal: Boolean = True): TLapeTree_Base; override;
 
     property Dump: TLPCompilerDump read FDump;
 
-    constructor Create(AScript: String; UseDump: Boolean = False);
+    constructor Create(AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean = False); overload;
     destructor Destroy; override;
   end;
 
@@ -80,57 +86,63 @@ uses
 
 { TLPCompilerDump }
 
-procedure TLPCompilerDump.Add(Decl: String);
+procedure TLPCompilerDump.Add(constref Text: String);
+var
+  Str: String;
 begin
-  Decl := TrimRight(Decl);
-  if (Length(Decl) > 0) then
+  Str := Trim(Text);
+  if (Str <> '') then
   begin
-    if (Decl[Length(Decl)] <> ';') then
-      Decl += ';';
-    FCurrent.Add(Decl);
+    if (Str[Length(Str)] <> ';') then
+      Str += ';';
+    FCurrent.Add(Str);
   end;
 end;
 
-function TLPCompilerDump.GetDump(ASection: String): TStringList;
+procedure TLPCompilerDump.SetSection(Name: String);
 begin
-  Result := FDict.GetDef(ASection, nil);
-end;
-
-procedure TLPCompilerDump.SetSection(AValue: String);
-begin
-  if (FDict.Get(AValue, FCurrent)) then
+  if (FDictionary.Get(Name, FCurrent)) then
     Exit;
 
   FCurrent := TStringList.Create;
-  FDict.AddFast(AValue, FCurrent);
+  FDictionary.Add(Name, FCurrent);
 end;
 
-function TLPCompilerDump.Sections: TStringArray;
+function TLPCompilerDump.GetSectionDump(Name: String): String;
+var
+  List: TStringList;
+begin
+  Result := '';
+
+  if (FDictionary.Get(Name, List)) then
+    Result := List.Text;
+end;
+
+function TLPCompilerDump.Merged: String;
 var
   i, j: Integer;
 begin
-  for i := 0 to High(FDict.Items) do
-    for j := 0 to High(FDict.Items[i]) do
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := FDict.Items[i][j].Key;
-    end;
+  Result := '';
+
+  for i := 0 to High(FDictionary.Items) do
+    for j := 0 to High(FDictionary.Items[i]) do
+      Result += FDictionary.Items[i][j].Val.Text + LineEnding;
 end;
 
-function TLPCompilerDump.All: String;
+procedure TLPCompilerDump.TraverseSections(Callback: TCallback);
 var
   i, j: Integer;
 begin
-  for i := 0 to High(FDict.Items) do
-    for j := 0 to High(FDict.Items[i]) do
-      Result += FDict.Items[i][j].Val.Text + LineEnding;
+  for i := 0 to High(FDictionary.Items) do
+    for j := 0 to High(FDictionary.Items[i]) do
+      Callback(FDictionary.Items[i][j].Key, FDictionary.Items[i][j].Val.Text);
 end;
 
 constructor TLPCompilerDump.Create(BaseSection: String);
 begin
   inherited Create;
 
-  FDict := TDict.Create(@HashStr);
+  FDictionary := TDict.Create(@HashStr);
   Section := BaseSection;
 end;
 
@@ -138,19 +150,19 @@ destructor TLPCompilerDump.Destroy;
 var
   i, j: Integer;
 begin
-  for i := 0 to High(FDict.Items) do
-    for j := 0 to High(FDict.Items[i]) do
-      FDict.Items[i][j].val.Free;
-  FDict.Free;
+  for i := 0 to High(FDictionary.Items) do
+    for j := 0 to High(FDictionary.Items[i]) do
+      FDictionary.Items[i][j].val.Free;
+  FDictionary.Free;
 
   inherited Destroy;
 end;
 
 { TLPCompiler }
 
-procedure TLPCompiler.AppendDump(Str: String);
+procedure TLPCompiler.AppendDump(constref Str: String);
 begin
-  if (FUseDump) then
+  if (FDumping) then
     FDump.Add(Str);
 end;
 
@@ -206,59 +218,61 @@ begin
   Result := inherited;
 end;
 
+function TLPCompiler.addGlobalVar(Value: AnsiString; AName: lpString): TLapeGlobalVar;
+begin
+  AppendDump('var ' + AName + ': String := ' + Value);
+  Result := inherited;
+end;
+
 function TLPCompiler.addGlobalConst(Value: UInt32; AName: lpString): TLapeGlobalVar;
 begin
-  if (FUseDump) then
-    AppendDump('const ' + AName + ': UInt32 = ' + IntToStr(Value));
+  AppendDump('const ' + AName + ': UInt32 = ' + IntToStr(Value));
 
   Result := addGlobalVar(Value, AName);
   Result.isConstant := True;
 
-  if (FUseDump) then
+  if (FDumping) then
     FDump.FCurrent.Delete(FDump.FCurrent.Count - 1); // Delete variable dump
 end;
 
 function TLPCompiler.addGlobalConst(Value: Int32; AName: lpString): TLapeGlobalVar;
 begin
-  if (FUseDump) then
-    AppendDump('const ' + AName + ': Int32 = ' + IntToStr(Value));
+  AppendDump('const ' + AName + ': Int32 = ' + IntToStr(Value));
 
   Result := addGlobalVar(Value, AName);
   Result.isConstant := True;
 
-  if (FUseDump) then
+  if (FDumping) then
     FDump.FCurrent.Delete(FDump.FCurrent.Count - 1); // Delete variable dump
 end;
 
 function TLPCompiler.addGlobalConst(Value: Extended; AName: lpString): TLapeGlobalVar;
 begin
-  if (FUseDump) then
-    AppendDump('const ' + AName + ': Extended = ' + FloatToStr(Value));
+  AppendDump('const ' + AName + ': Extended = ' + FloatToStr(Value));
 
   Result := addGlobalVar(Value, AName);
   Result.isConstant := True;
 
-  if (FUseDump) then
+  if (FDumping) then
     FDump.FCurrent.Delete(FDump.FCurrent.Count - 1); // Delete variable dump
 end;
 
-procedure TLPCompiler.Import(Imports: TLPImports; Thread: TThread);
+function TLPCompiler.addGlobalConst(Value: AnsiString; AName: lpString): TLapeGlobalVar;
 begin
-  if (lpiCore in Imports) then
-    Import_Core(Self, Thread);
-  if (lpiString in Imports) then
-    Import_String(Self);
-  if (lpiBox in Imports) then
-    Import_Box(Self);
-  if (lpiTime in Imports) then
-    Import_Time(Self);
+  AppendDump('const ' + AName + ': String = ' + Value);
+
+  Result := addGlobalVar(Value, AName);
+  Result.isConstant := True;
+
+  if (FDumping) then
+    FDump.FCurrent.Delete(FDump.FCurrent.Count - 1); // Delete variable dump
 end;
 
-constructor TLPCompiler.Create(AScript: String; UseDump: Boolean);
+constructor TLPCompiler.Create(AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean);
 var
   Typ: ELapeBaseType;
 begin
-  FUseDump := UseDump;
+  FDumping := Dumping;
   FDump := TLPCompilerDump.Create('Lape');
 
   inherited Create(TLapeTokenizerString.Create(AScript));
@@ -266,10 +280,24 @@ begin
   InitializePascalScriptBasics(Self, [psiSettings, psiExceptions, psiTypeAlias]);
   ExposeGlobals(Self);
 
-  if (FUseDump) then
+  try
+    if (lpiCore in Imports) then Import_Core(Self, Thread);
+    if (lpiString in Imports) then Import_String(Self);
+    if (lpiBox in Imports) then Import_Box(Self);
+    if (lpiTime in Imports) then Import_Time(Self);
+  except
+    on e: Exception do
+      LapeException('Exception on importing unit: ' + e.Message);
+  end;
+
+  if (FDumping) then
+  begin
+    Dump.Section := 'Lape';
+
     for Typ := Low(ELapeBaseType) to High(ELapeBaseType) do
       if (FBaseTypes[Typ] <> nil) then
         AppendDump('type ' + FBaseTypes[Typ].Name + ' = ' + FBaseTypes[Typ].Name);
+  end;
 end;
 
 destructor TLPCompiler.Destroy;

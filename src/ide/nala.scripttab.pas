@@ -5,8 +5,8 @@ unit nala.ScriptTab;
 interface
 
 uses
-  Classes, SysUtils, Controls, ComCtrls, ExtCtrls, Buttons,
-  nala.Messages, nala.CodeExplorer, nala.SynEdit, nala.ScriptThread, nala.ListBox, nala.ScriptTree;
+  Classes, SysUtils, Controls, ComCtrls, ExtCtrls, Buttons, Dialogs,
+  nala.Messages, nala.SynEdit, nala.ScriptThread, nala.ListBox;
 
 type
 
@@ -18,22 +18,25 @@ type
     FMessages: TNalaMessages;
     FThread: TNalaScriptThread;
     FScriptRunning: Boolean;
-    FScriptTree: TNalaScriptTree;
+    FFilePath: String;
 
     procedure InitThread;
-
     procedure OnThreadTerminate(Sender: TObject);
+
+    procedure HideComponents(Sender: TObject);
+    procedure ShowComponents(Sender: TObject);
   public
     property Messages: TNalaMessages read FMessages;
     property ScriptRunning: Boolean read FScriptRunning;
     property SynEdit: TNalaSynEdit read FSynEdit;
-
-    procedure HideComponents;
-    procedure ShowComponents;
+    property FilePath: String read FFilePath write FFilePath;
 
     procedure RunScript;
     procedure CompileScript;
     procedure StopScript;
+
+    procedure Save;
+    procedure SaveAs;
 
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -46,22 +49,17 @@ type
     FPageControl: TPageControl;
     FLastTab: TNalaTab;
 
-    procedure DoChange(Sender: TObject);
     function getActiveTab: TNalaTab;
   public
     property ActiveTab: TNalaTab read getActiveTab;
 
-    procedure Add(ACaption: String; AScript: String);
-    procedure Add(APath: String);
+    function AddTab: TNalaTab;
+    procedure LoadTab;
+    procedure LoadTab(Path: String); overload;
 
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
-
-const
-  DEFAULT_SCRIPT = 'program new; ' + LineEnding +
-                   'begin        ' + LineEnding +
-                   'end.';
 
 implementation
 
@@ -70,48 +68,38 @@ uses
 
 { TNalaTabs }
 
-procedure TNalaTabs.DoChange(Sender: TObject);
+function TNalaTabs.GetActiveTab: TNalaTab;
 begin
-  if (FLastTab <> nil) then
-    FLastTab.HideComponents;
-  FLastTab := FPageControl.ActivePage as TNalaTab;
-
-  with ActiveTab do
-  begin
-    ShowComponents();
-    if (ScriptRunning) then
-      NalaForm.ButtonState := bsRunningScript
-    else
-      NalaForm.ButtonState := bsStoppedScript;
-  end;
+  Result := TNalaTab(FPageControl.ActivePage);
 end;
 
-function TNalaTabs.getActiveTab: TNalaTab;
+procedure TNalaTabs.LoadTab;
+var
+  i: Int32;
 begin
-  Result := FPageControl.ActivePage as TNalaTab
+  if (NalaForm.OpenDialog.Execute) then
+    for i := 0 to NalaForm.OpenDialog.Files.Count - 1 do
+      Self.LoadTab(NalaForm.OpenDialog.Files[i]);
 end;
 
-procedure TNalaTabs.Add(ACaption: String; AScript: String);
+procedure TNalaTabs.LoadTab(Path: String);
 begin
-  with TNalaTab.Create(Self) do
-  begin
-    Parent := FPageControl;
-    Caption := ACaption;
-
-    FSynEdit.Lines.Text := AScript;
-  end;
-
-  FPageControl.ActivePageIndex := FPageControl.PageCount - 1;
+ with Self.AddTab do
+ begin
+   SynEdit.Load(Path);
+   Caption := ExtractFileNameWithoutExt(ExtractFileName(Path));
+ end;
 end;
 
-procedure TNalaTabs.Add(APath: String);
+function TNalaTabs.AddTab: TNalaTab;
 begin
-  with TNalaTab.Create(Self) do
+  Result := TNalaTab.Create(Self);
+  with Result do
   begin
     Parent := FPageControl;
-    Caption := ExtractFileName(APath);
+    Caption := 'New';
 
-    FSynEdit.Lines.LoadFromFile(APath);
+    SynEdit.Lines.AddStrings(['program new;', 'begin', 'end;']);
   end;
 
   FPageControl.ActivePageIndex := FPageControl.PageCount - 1;
@@ -122,8 +110,7 @@ begin
   inherited Create(AOwner);
 
   FPageControl := TPageControl.Create(Self);
-  FPageControl.Parent := AOwner as TWinControl;
-  FPageControl.OnChange := @DoChange;
+  FPageControl.Parent := TWinControl(Owner);
   FPageControl.Align := alClient;
 
   FLastTab := nil;
@@ -161,17 +148,19 @@ begin
     NalaForm.ButtonState := bsStoppedScript;
 end;
 
-procedure TNalaTab.HideComponents;
+procedure TNalaTab.HideComponents(Sender: TObject);
 begin
-  FScriptTree.Running := False;
   FMessages.Hide;
 end;
 
-procedure TNalaTab.ShowComponents;
+procedure TNalaTab.ShowComponents(Sender: TObject);
 begin
-  FSynEdit.LastModified := Now(); // To force a update
-  FScriptTree.Running := True;
   FMessages.Show;
+
+  case FScriptRunning of
+    True: NalaForm.ButtonState := bsRunningScript;
+    False: NalaForm.ButtonState := bsStoppedScript;
+  end;
 end;
 
 procedure TNalaTab.RunScript;
@@ -209,22 +198,34 @@ begin
     end;
 end;
 
+procedure TNalaTab.SaveAs;
+begin
+  if (NalaForm.SaveDialog.Execute) then
+    FSynEdit.Save(NalaForm.SaveDialog.FileName);
+end;
+
+procedure TNalaTab.Save;
+begin
+  if (FFilePath = '') or (not FileExists(FFilePath)) then
+    Self.SaveAs
+  else
+    FSynEdit.Save(FFilePath);
+end;
+
 constructor TNalaTab.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
 
   FMessages := TNalaMessages.Create(NalaForm.MessagePanel);
   FSynEdit := TNalaSynEdit.Create(Self);
-  FScriptTree := TNalaScriptTree.Create(FSynEdit);
+  FFilePath := '';
 
-  HideComponents();
+  OnHide := @HideComponents;
+  OnShow := @ShowComponents;
 end;
 
 destructor TNalaTab.Destroy;
 begin
-  FScriptTree.Terminate;
-  FScriptTree.WaitFor;
-
   FMessages.Free;
 
   inherited Destroy;

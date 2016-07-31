@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics,
-  nala.CoreTypes;
+  nala.Types;
 
 function RGBToBGR(Color: TColor): TRGB32; inline;
 function BGRToRGB(BGR: TRGB32): TColor; inline;

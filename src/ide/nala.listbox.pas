@@ -101,7 +101,7 @@ procedure TNalaListBox.WrapItem(Item: TListItem; AWidth: Integer);
   end;
 
 var
-  i, Start, Len, LastSpace, TextWidth: Integer;
+  i, Start, LastSpace, TextWidth: Integer;
   Curr, Str: String;
 begin
   SetLength(Item.Lines, 0);

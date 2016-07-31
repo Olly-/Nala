@@ -12,7 +12,7 @@ procedure Import_Box(Compiler: TLPCompiler);
 implementation
 
 uses
-  nala.CoreTypes, nala.TBox;
+  nala.Types, nala.TBox;
 
 procedure Lape_TBox_Area(Params: PParamArray; const Result: Pointer);
 begin

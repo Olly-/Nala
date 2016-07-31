@@ -6,7 +6,7 @@ unit nala.Strings;
 interface
 
 uses
-  Classes, SysUtils, base64, nala.CoreTypes;
+  Classes, SysUtils, base64, nala.Types;
 
 type
 

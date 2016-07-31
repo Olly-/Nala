@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils,
-  nala.CoreTypes;
+  nala.Types;
 
 function Point(X, Y: Int32): TPoint;
 

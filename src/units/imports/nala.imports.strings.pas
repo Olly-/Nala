@@ -12,7 +12,7 @@ procedure Import_String(Compiler: TLPCompiler);
 implementation
 
 uses
-  nala.Strings, nala.CoreTypes;
+  nala.Strings, nala.Types;
 
 type
   PReplaceFlags = ^TReplaceFlags;

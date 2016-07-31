@@ -169,7 +169,7 @@ function TScriptParser.FindDeclaration(AName: String; var Decl: TDeclaration): B
 
   function Find(AName: String; AItems: TDeclarationArray; var Decl: TDeclaration): Boolean;
   var
-    i, j: Integer;
+    i: Integer;
   begin
     Result := False;
 
@@ -194,7 +194,6 @@ function TScriptParser.FindDeclaration(AName: String; var Decl: TDeclaration): B
 var
   i: Integer;
   Typ: TType;
-  Str: String;
 begin
   Result := False;
 
@@ -313,18 +312,15 @@ begin
   inherited Destroy;
 end;
 
-var
-  Compiler: TLPCompiler;
-  Typ: TType;
-
 initialization
-  Compiler := TLPCompiler.Create('', True);
-  Compiler.Import();
 
-  NalaScript := TScriptParser.Create;
-  NalaScript.Run(Compiler.Dump.All, -1);
-
-  Compiler.Free;
+  with TLPCompiler.Create('', AllImports, nil, True) do
+  try
+    NalaScript := TScriptParser.Create;
+    NalaScript.Run(Dump.Merged, -1);
+  finally
+    Free;
+  end;
 
 finalization;
   NalaScript.Free;

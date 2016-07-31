@@ -1,15 +1,37 @@
 unit nala.CodeExplorer;
 
 {$mode objfpc}{$H+}
-{$modeswitch advancedrecords}
 
 interface
 
 uses
-  Classes, SysUtils, Controls, ComCtrls, nala.CodeParser, nala.SynEdit, CastaliaPasLexTypes,
+  Classes, SysUtils, Controls, ComCtrls, nala.CodeParser, nala.SynEdit,
   nala.CodeTree;
 
 type
+  TNalaCodeExplorer = class;
+
+  { TNalaScriptTreeUpdater }
+
+  TNalaScriptTreeUpdater = class(TThread)
+  private
+    FTree: TNalaCodeTree;
+    FTreeBuffer: TNalaCodeTree;
+    FVirtualSynEdit: record
+      Text: String;
+      LastModified: TDateTime;
+      Pos: Int32;
+    end;
+
+    procedure UpdateInfo;
+    procedure UpdateTree;
+    procedure UpdateBuffer(Parser: TCodeParser; Pos: Int32);
+  protected
+    procedure Execute; override;
+    procedure DoTerminate; override;
+
+    constructor Create(ATree: TNalaCodeTree);
+  end;
 
   { TNalaCodeExplorer }
 
@@ -21,11 +43,13 @@ type
     FScriptTab: TTabSheet;
     FScriptTree: TNalaCodeTree;
 
+    FScriptTreeUpdater: TNalaScriptTreeUpdater;
+
+    procedure AddSection(AName: String; constref SectionDump: String);
     procedure FillNala;
   public
-    procedure FillScript(Items: TTreeNodes);
-
     constructor Create(TheOwner: TComponent); override;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -33,71 +57,120 @@ implementation
 uses
   nala.LapeCompiler, nala.MainForm;
 
+procedure TNalaScriptTreeUpdater.UpdateInfo;
 var
-  CriticalSection: TRTLCriticalSection;
-
-procedure TNalaCodeExplorer.FillNala;
-
-   procedure AddSection(constref Name, Text: String);
-   var
-     Node: TTreeNode;
-   begin
-     with TCodeParser.Create do
-     try
-       Run(Text);
-
-       Node := FNalaTree.Items.Add(nil, Name);
-       Node.ImageIndex := 5;
-       Node.SelectedIndex := 5;
-
-       FNalaTree.LoadFromDecls(Items, Node);
-     finally
-       Free;
-     end;
-   end;
-
-var
-  Compiler: TLPCompiler;
-  Section: String;
+  SynEdit: TNalaSynEdit;
 begin
-  Compiler := TLPCompiler.Create('', True);
+  SynEdit := NalaForm.ScriptTabs.ActiveTab.SynEdit;
 
-  try
-    Compiler.Import([lpiCore, lpiBox, lpiString, lpiTime]);
-    for Section in Compiler.Dump.Sections do
-      AddSection(Section, Compiler.Dump[Section].Text);
-  except
-    on e: Exception do
-      Writeln('TNalaCodeExplorer.FillNala: Exception: ' + e.Message);
-  end;
-
-  Compiler.Free;
+  FVirtualSynEdit.LastModified := SynEdit.LastModified;
+  FVirtualSynEdit.Pos := SynEdit.SelStart;
+  FVirtualSynEdit.Text := SynEdit.Text;
 end;
 
-procedure TNalaCodeExplorer.FillScript(Items: TTreeNodes);
+procedure TNalaScriptTreeUpdater.UpdateTree;
+begin
+  FTree.Assign(FTreeBuffer);
+end;
+
+procedure TNalaScriptTreeUpdater.UpdateBuffer(Parser: TCodeParser; Pos: Int32);
 var
   i: Int32;
 begin
-  EnterCriticalSection(CriticalSection);
+  FTreeBuffer.BeginUpdate;
+  FTreeBuffer.Items.Clear;
 
+  for i := 0 to Parser.Items.Count - 1 do
+    if (Parser.Items[i].ClassType = TDeclMethod) then
+      FTreeBuffer.AddMethod(TDeclMethod(Parser.Items[i]), (Pos > Parser.Items[i].StartPos) and (Pos < (Parser.Items[i].EndPos - 1)))
+    else
+    if (Parser.Items[i].ClassType = TDeclVariable) then
+      FTreeBuffer.AddVar(TDeclVariable(Parser.Items[i]))
+    else
+    if (Parser.Items[i].ClassType = TDeclConstant) then
+      FTreeBuffer.AddConst(TDeclConstant(Parser.Items[i]))
+    else
+    if (Parser.Items[i].ClassType = TCPTypeDeclaration) then
+      FTreeBuffer.AddType(TCPTypeDeclaration(Parser.Items[i]));
+
+  FTreeBuffer.EndUpdate;
+end;
+
+procedure TNalaScriptTreeUpdater.Execute;
+var
+  LastUpdate: TDateTime = 0;
+  Parser: TCodeParser;
+begin
   try
-    FScriptTree.BeginUpdate;
-    FScriptTree.Items.Clear;
-    FScriptTree.Items.Assign(Items);
-
-    for i := 0 to Items.Count - 1 do
+    while (not Terminated) do
     begin
-      if (Items[i].Data = nil) then
-        Continue;
+      Synchronize(@UpdateInfo);
 
-      FScriptTree.Items[i].Data := GetMem(SizeOf(TNodeData));
-      Move(Items[i].Data^, FScriptTree.Items[i].Data^, SizeOf(TNodeData));
+      if (FVirtualSynEdit.LastModified <> LastUpdate) then
+      begin
+        Parser := TCodeParser.Create;
+        try
+          if (Parser.Run(FVirtualSynEdit.Text)) then
+            UpdateBuffer(Parser, FVirtualSynEdit.Pos);
+        finally
+          Parser.Free;
+        end;
+
+        Synchronize(@UpdateTree);
+
+        LastUpdate := FVirtualSynEdit.LastModified;
+      end;
+
+      Sleep(1000);
     end;
-
-    FScriptTree.EndUpdate;
-  finally
-    LeaveCriticalsection(CriticalSection);
+  except
+    on e: Exception do
+      Writeln('Exception on TNalaScriptTreeUpdater.Execute: ' + e.ClassName + ': ' + e.Message);
   end;
+end;
+
+procedure TNalaScriptTreeUpdater.DoTerminate;
+begin
+  FTreeBuffer.Free;
+
+  inherited;
+end;
+
+constructor TNalaScriptTreeUpdater.Create(ATree: TNalaCodeTree);
+begin
+  inherited Create(False);
+
+  FreeOnTerminate := True;
+
+  FTree := ATree;
+  FTreeBuffer := TNalaCodeTree.Create(nil);
+end;
+
+procedure TNalaCodeExplorer.AddSection(AName: String; constref SectionDump: String);
+var
+  Node: TTreeNode;
+begin
+  with TCodeParser.Create do
+  try
+    Run(SectionDump);
+
+    Node := FNalaTree.Items.Add(nil, AName);
+    Node.ImageIndex := 5;
+    Node.SelectedIndex := 5;
+
+    FNalaTree.LoadFromDecls(Items, Node);
+  finally
+    Free;
+  end;
+end;
+
+procedure TNalaCodeExplorer.FillNala;
+var
+  Compiler: TLPCompiler;
+begin
+  Compiler := TLPCompiler.Create('', AllImports, nil, True);
+  Compiler.Dump.TraverseSections(@AddSection);
+  Compiler.Free;
 end;
 
 constructor TNalaCodeExplorer.Create(TheOwner: TComponent);
@@ -123,14 +196,18 @@ begin
   FScriptTree.Images := NalaForm.Images16x16;
   FScriptTree.DoubleBuffered := True;
 
-  FillNala();
+  FScriptTreeUpdater := TNalaScriptTreeUpdater.Create(FScriptTree);
+
+  FillNala;
 end;
 
-initialization
-  InitCriticalSection(CriticalSection);
+destructor TNalaCodeExplorer.Destroy;
+begin
+  FScriptTreeUpdater.Terminate;
+  FScriptTreeUpdater.WaitFor;
 
-finalization
-  DoneCriticalsection(CriticalSection);
+  inherited Destroy;
+end;
 
 end.
 

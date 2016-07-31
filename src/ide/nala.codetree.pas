@@ -33,6 +33,7 @@ type
     function AddType(Decl: TCPTypeDeclaration; ParentNode: TTreeNode = nil): TTreeNode; overload;
 
     procedure LoadFromDecls(List: TDeclarationList; ParentNode: TTreeNode);
+    procedure Assign(From: TNalaCodeTree);
 
     constructor Create(AOwner: TComponent); override;
   end;
@@ -229,6 +230,25 @@ begin
   ParentNode.Expanded := False;
 
   Items.EndUpdate;
+end;
+
+procedure TNalaCodeTree.Assign(From: TNalaCodeTree);
+var
+  i: Int32;
+begin
+  BeginUpdate;
+  Items.Assign(From.Items);
+
+  for i := 0 to From.Items.Count - 1 do
+  begin
+    if (From.Items[i].Data = nil) then
+      Continue;
+
+    Items[i].Data := GetMem(SizeOf(TNodeData));
+    Move(From.Items[i].Data^, Items[i].Data^, SizeOf(TNodeData));
+  end;
+
+  EndUpdate;
 end;
 
 function TNalaCodeTree.AddType(AText: String; ParentNode: TTreeNode): TTreeNode;

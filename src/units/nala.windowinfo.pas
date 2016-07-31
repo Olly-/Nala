@@ -6,7 +6,7 @@ unit nala.WindowInfo;
 interface
 
 uses
-  Classes, SysUtils, LCLType, nala.CoreTypes;
+  Classes, SysUtils, LCLType, nala.Types;
 
 type
 

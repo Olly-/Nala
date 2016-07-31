@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, Types,
-  nala.CoreTypes;
+  nala.Types;
 
 type
 

@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, LCLType,
-  nala.CoreTypes, fgl, nala.WindowInfo;
+  nala.Types, fgl, nala.WindowInfo;
 
 (*
   Based on how Lazarus forms work:
