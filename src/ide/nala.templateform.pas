@@ -149,7 +149,10 @@ var
   Str: String;
 begin
   if (InputQuery('New Template', 'Template Name:', Str)) then
+  begin
     ListBox.AddItem(Str, Self.AddTab(FDirectory + Str + '.nala'));
+    Notebook.PageIndex := Notebook.PageCount - 1;
+  end;
 end;
 
 procedure TTemplateForm.Button2Click(Sender: TObject);

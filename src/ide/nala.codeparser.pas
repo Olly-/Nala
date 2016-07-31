@@ -1388,6 +1388,8 @@ end;
 
 function TCodeParser.Run(constref Text: String; MaxPos: Int32; CaretPos: Int32): Boolean;
 begin
+  Result := True;
+
   if (not Assigned(OnMessage)) then
     OnMessage := @DefaultMessage;
 
@@ -1399,13 +1401,16 @@ begin
 
   try
     Run(FStream, MaxPos);
-    Result := True;
   except
     on e: ESyntaxError do
-      OnMessage(Self, meError, e.ClassName + ': ' + e.Message, -1, -1); // Vaild'ish (True)
+     if (OnMessage <> nil) then
+       OnMessage(Self, meError, e.ClassName + ': ' + e.Message, -1, -1); // Still result true.
+
     on e: Exception do
     begin
-      OnMessage(Self, meError, e.ClassName + ': ' + e.Message, -1, -1);
+      if (OnMessage <> nil) then
+        OnMessage(Self, meError, e.ClassName + ': ' + e.Message, -1, -1);
+
       Result := False;
     end;
   end;
@@ -1449,7 +1454,10 @@ begin
   PopStack();
 
   for i := 1 to Decl.OwnerData.Count - 1 do
-    FItems.AddItem(TDeclVariable.Create(Decl, i));
+    if (Decl.Owner <> nil) then
+      Decl.Owner.Items.AddItem(TDeclVariable.Create(Decl, i))
+    else
+      FItems.AddItem(TDeclVariable.Create(Decl, i));
 end;
 
 procedure TCodeParser.VarName;

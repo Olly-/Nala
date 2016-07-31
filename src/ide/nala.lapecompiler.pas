@@ -7,8 +7,7 @@ interface
 
 uses
   Classes, SysUtils,
-  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree,
-  nala.Types, nala.Dictionary, lpexceptions;
+  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree, nala.Dictionary, lpexceptions;
 
 type
 

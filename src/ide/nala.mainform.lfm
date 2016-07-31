@@ -1,7 +1,7 @@
 object NalaForm: TNalaForm
-  Left = -324
+  Left = -329
   Height = 224
-  Top = 781
+  Top = 779
   Width = 312
   Caption = 'Nala'
   ClientHeight = 204

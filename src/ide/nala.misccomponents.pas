@@ -190,8 +190,7 @@ end;
 
 procedure TNalaCustomButton.PaintBackground(var PaintRect: TRect);
 begin
-  if (Width = 24) then
-    Canvas.Draw(PaintRect.Left, PaintRect.Top, Button24);
+  Canvas.Draw(PaintRect.Left, PaintRect.Top, Button22);
 end;
 
 function TNalaValueList.getCells(ACol, ARow: Integer): string;
@@ -276,10 +275,9 @@ begin
 end;
 
 initialization
-  Button24 := CreateButton(24, 24);
   Button22 := CreateButton(22, 22);
+
 finalization
-  Button24.Free;
   Button22.Free;
 
 end.

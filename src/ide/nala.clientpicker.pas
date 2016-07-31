@@ -41,8 +41,7 @@ begin
         if (Window.HandleIsVaild) then
         begin
           {$IFDEF WINDOWS}
-          writeln('test');
-          X := Window.Left;
+            X := Window.Left;
             Y := Window.Top;
             if (Window.IsTopWindow) then
               Window.OffsetBorder(X, Y);

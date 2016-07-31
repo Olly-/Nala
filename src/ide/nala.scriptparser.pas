@@ -51,7 +51,7 @@ type
     procedure OnMethodOfObject(Decl: TDeclMethod);
     procedure OnType(Decl: TCPTypeDeclaration);
   public
-    procedure Run(constref Script: String; CaretPos: Int32);
+    procedure Run(constref Script: String; CaretPos: Int32; MaxPos: Int32 = -1);
 
 
     function FindDeclaration(AName: String; var Decl: TDeclaration): Boolean;
@@ -150,11 +150,11 @@ begin
     Writeln('CP: Failed to find type declaration for: ', Decl.ObjectName);
 end;
 
-procedure TScriptParser.Run(constref Script: String; CaretPos: Int32);
+procedure TScriptParser.Run(constref Script: String; CaretPos: Int32; MaxPos: Int32);
 begin
   FItems.Clear;
 
-  if (FParser.Run(Script, -1, CaretPos)) then
+  if (FParser.Run(Script, MaxPos, CaretPos)) then
   begin
     FItems.AddList(FParser.Items.List);
     if (FBaseParser <> nil) then

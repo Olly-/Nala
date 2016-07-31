@@ -53,8 +53,8 @@ type
     FItems: TStringList;
     FColumnWidth: Integer;
 
-    function GetExpression: String;
-    procedure FillItems(Expression: String);
+    procedure GetExpression(out Expression: String; out StartPos: UInt32);
+    procedure FillItems();
 
     procedure AddVariable(Decl: TDeclVariable);
     procedure AddMethod(Decl: TDeclMethod);
@@ -297,16 +297,18 @@ end;
 
 { TNalaAutoComplete }
 
-function TNalaAutoComplete.GetExpression: String;
+procedure TNalaAutoComplete.GetExpression(out Expression: String; out StartPos: UInt32);
 var
   i: Integer;
   Inside: Boolean;
   Text: String;
 begin
-  Result := '';
+  Expression := '';
+  StartPos := 0;
+
   Inside := False;
 
-  Text := LowerCase(Trim(Copy(Editor.LineText, 1, Editor.CaretX)));
+  Text := LowerCase(Copy(Editor.LineText, 1, Editor.CaretX));
 
   for i := Length(Text) downto 1 do
     case Text[i] of
@@ -315,14 +317,15 @@ begin
       ' ': Break;
       else
         if (not Inside) then
-          Insert(Text[i], Result, 1);
+          Insert(Text[i], Expression, 1);
     end;
 
-  if (LastDelimiter('.', Result) < Length(Result)) then
-    Result := Copy(Result, 1, LastDelimiter('.', Result));
+  StartPos := Editor.SelStart - i - 1;
+  if (LastDelimiter('.', Expression) < Length(Expression)) then
+    Expression := Copy(Expression, 1, LastDelimiter('.', Expression));
 end;
 
-procedure TNalaAutoComplete.FillItems(Expression: String);
+procedure TNalaAutoComplete.FillItems;
 var
   Parser: TScriptParser;
   i: Integer;
@@ -332,9 +335,13 @@ var
   Rec: TCPRecord;
   Tree: TTypeTree;
   Decls: TDeclarationArray;
+  Expression: String;
+  ExpressionPos: UInt32;
 begin
+  GetExpression(Expression, ExpressionPos);
+
   Parser := TScriptParser.Create(NalaScript);
-  Parser.Run(Editor.Lines.Text, Editor.SelStart);
+  Parser.Run(Editor.Lines.Text, Editor.SelStart, ExpressionPos);
 
   Writeln('AutoComplete: Expression = ', Expression);
   Writeln('AutoComplete: Current String = ', CurrentString);
@@ -485,7 +492,7 @@ begin
   ACanvas.PrettyTextOut(X + FColumnWidth, Y, Data.FPaintString);
 end;
 
-function TNalaAutoComplete.DoMeasure(const AKey: String; ACanvas: TCanvas; Selected: Boolean; Index: Integer): classes.TPoint;
+function TNalaAutoComplete.DoMeasure(const AKey: String; ACanvas: TCanvas; Selected: Boolean; Index: Integer): Classes.TPoint;
 begin
   Result.Y := FontHeight;
   Result.X := FColumnWidth + ACanvas.PrettyTextExtent(TItemData(ItemList.Objects[Index]).FPaintString).cx;
@@ -532,7 +539,7 @@ begin
     FItems.BeginUpdate;
     FItems.Clear;
 
-    FillItems(GetExpression());
+    FillItems();
 
     DoSearch(Pos);
   finally
