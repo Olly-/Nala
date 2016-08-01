@@ -175,7 +175,6 @@
       <Unit24>
         <Filename Value="..\units\imports\nala.imports.strings.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.Imports.Strings"/>
       </Unit24>
       <Unit25>
         <Filename Value="..\units\nala.tbox.pas"/>

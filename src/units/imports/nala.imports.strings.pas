@@ -1,4 +1,4 @@
-unit nala.Imports.Strings;
+unit nala.imports.strings;
 
 {$mode objfpc}{$H+}
 
@@ -42,9 +42,9 @@ begin
   PIntArray(Result)^ := PString(Params^[0])^.PosEx(PString(Params^[1])^);
 end;
 
-procedure Lape_String_PosL(Params: PParamArray; const Result: Pointer);
+procedure Lape_String_Pos(Params: PParamArray; const Result: Pointer);
 begin
-  PInteger(Result)^ := PString(Params^[0])^.PosL(PString(Params^[1])^);
+  PInteger(Result)^ := PString(Params^[0])^.Pos(PString(Params^[1])^);
 end;
 
 procedure Lape_String_PosR(Params: PParamArray; const Result: Pointer);
@@ -62,6 +62,16 @@ begin
   PStringArray(Result)^ := PString(Params^[0])^.Explode(PString(Params^[1])^);
 end;
 
+procedure Lape_String_GetNumbers(Params: PParamArray; const Result: Pointer);
+begin
+  PIntArray(Result)^ := PString(Params^[0])^.GetNumbers;
+end;
+
+procedure Lape_String_GetLetters(Params: PParamArray; const Result: Pointer);
+begin
+  PStringArray(Result)^ := PString(Params^[0])^.GetLetters;
+end;
+
 procedure Import_String(Compiler: TLPCompiler);
 begin
   with Compiler do
@@ -73,10 +83,12 @@ begin
     addGlobalFunc('function String.After(constref Delimiter: String): String;', @Lape_String_After);
     addGlobalFunc('function String.Before(constref Delimiter: String): String;', @Lape_String_Before);
     addGlobalFunc('function String.PosEx(constref SubStr: String): TIntArray;', @Lape_String_PosEx);
-    addGlobalFunc('function String.PosL(constref SubStr: String): Integer;', @Lape_String_PosL);
+    addGlobalFunc('function String.Pos(constref SubStr: String): Integer;', @Lape_String_Pos);
     addGlobalFunc('function String.PosR(constref SubStr: String): Integer;', @Lape_String_PosR);
     addGlobalFunc('function String.Replace(constref SubStr, ReplaceStr: String; Flags: TReplaceFlags): String;', @Lape_String_Replace);
     addGlobalFunc('function String.Explode(constref Delimiter: String): TStringArray; ', @Lape_String_Encode);
+    addGlobalFunc('function String.GetNumbers: TIntArray;', @Lape_String_GetNumbers);
+    addGlobalFunc('function String.GetLetters: TStringArray;', @Lape_String_GetLetters);
   end;
 end;
 

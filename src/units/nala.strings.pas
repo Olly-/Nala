@@ -21,13 +21,16 @@ type
     function Before(constref Delimiter: String): String;
 
     function PosEx(constref SubStr: String): TIntArray;
-    function PosL(constref SubStr: String): Integer;
+    function Pos(constref SubStr: String): Integer;
     function PosR(constref SubStr: String): Integer;
     function Count(constref SubStr: String): Integer;
 
     function Explode(constref Delimiter: String): TStringArray;
 
     function Replace(constref SubStr, ReplaceStr: String; Flags: TReplaceFlags): String;
+
+    function GetNumbers: TIntArray;
+    function GetLetters: TStringArray;
   end;
 
 implementation
@@ -46,7 +49,7 @@ function TNalaStringHelper.After(constref Delimiter: String): String;
 var
   p: UInt32;
 begin
-  p := Pos(Delimiter, Self);
+  p := Self.Pos(Delimiter);
   if (p = 0) then
     Exit('');
   Inc(p, Length(Delimiter));
@@ -57,7 +60,7 @@ function TNalaStringHelper.Before(constref Delimiter: String): String;
 var
   p: UInt32;
 begin
-  p := Pos(Delimiter, Self);
+  p := Self.Pos(Delimiter);
   if (p = 0) then
     Exit('');
   Result := Copy(Self, 1, p - 1);
@@ -99,7 +102,7 @@ end;
 {*
  Returns first position of the given pattern/substring from left.
 *}
-function TNalaStringHelper.PosL(constref SubStr: String): Integer;
+function TNalaStringHelper.Pos(constref SubStr: String): Integer;
 var
   HitPos,LenSub,i: UInt32;
 begin
@@ -196,8 +199,8 @@ begin
     begin
       SetLength(Result, Hi + (HiRep-HiSub));
       case (rfIgnoreCase in flags) of
-        True: Curr := LowerCase(Self).PosL(LowerCase(SubStr));
-        False:Curr := Self.PosL(SubStr);
+        True: Curr := LowerCase(Self).Pos(LowerCase(SubStr));
+        False:Curr := Self.Pos(SubStr);
       end;
       if Curr = 0 then Exit(Copy(Self, 1,Hi));
 
@@ -207,6 +210,38 @@ begin
       SetLength(Result, Hi+(HiRep-HiSub));
     end;
   end;
+end;
+
+function TNalaStringHelper.GetNumbers: TIntArray;
+var
+  i, c: Int32;
+begin
+  SetLength(Result, 0);
+  c := 0;
+
+  for i := 1 to High(Self) do
+    if (Self[i] in ['0'..'9']) then
+    begin
+      SetLength(Result, c + 1);
+      Result[c] := StrToInt(Self[i]);
+      Inc(c);
+    end;
+end;
+
+function TNalaStringHelper.GetLetters: TStringArray;
+var
+  i, c: Int32;
+begin
+  SetLength(Result, 0);
+  c := 0;
+
+  for i := 1 to High(Self) do
+    if (Self[i] in ['a'..'z', 'A'..'Z']) then
+    begin
+      SetLength(Result, c + 1);
+      Result[c] := Self[i];
+      Inc(c);
+    end;
 end;
 
 {*
