@@ -40,11 +40,11 @@ type
 
   { TLPCompiler }
 
-  TLPImport = (lpiCore, lpiTime, lpiString, lpiBox);
+  TLPImport = (lpiCore, lpiTime, lpiString, lpiBox, lpiPoint);
   TLPImports = set of TLPImport;
 
 const
-  AllImports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox];
+  AllImports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox, lpiPoint];
 
 type
   TLPCompiler = class(TLapeCompiler)
@@ -81,7 +81,7 @@ type
 implementation
 
 uses
-  nala.Imports.Time, nala.Imports.Strings, nala.Imports.Box, nala.Imports.Core;
+  nala.Imports.Time, nala.Imports.Strings, nala.Imports.TBox, nala.Imports.TPoint, nala.Imports.Core;
 
 { TLPCompilerDump }
 
@@ -282,8 +282,9 @@ begin
   try
     if (lpiCore in Imports) then Import_Core(Self, Thread);
     if (lpiString in Imports) then Import_String(Self);
-    if (lpiBox in Imports) then Import_Box(Self);
+    if (lpiBox in Imports) then Import_TBox(Self);
     if (lpiTime in Imports) then Import_Time(Self);
+    if (lpiPoint in Imports) then Import_TPoint(Self);
   except
     on e: Exception do
       LapeException('Exception on importing unit: ' + e.Message);

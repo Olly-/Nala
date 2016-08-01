@@ -70,7 +70,7 @@ uses
   nala.MainForm, agg_fpimage, Agg_LCL, Types;
 
 var
-  Button22, Button24: TBitmap;
+  Button22: TBitmap;
 
 { TNalaCustomButton }
 

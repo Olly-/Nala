@@ -49,7 +49,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="43">
+    <Units Count="44">
       <Unit0>
         <Filename Value="Nala.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -183,9 +183,9 @@
         <UnitName Value="nala.TBox"/>
       </Unit25>
       <Unit26>
-        <Filename Value="..\units\imports\nala.imports.box.pas"/>
+        <Filename Value="..\units\imports\nala.imports.tbox.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.Imports.Box"/>
+        <UnitName Value="nala.Imports.TBox"/>
       </Unit26>
       <Unit27>
         <Filename Value="nala.lapecompiler.pas"/>
@@ -203,72 +203,77 @@
         <UnitName Value="nala.Mouse"/>
       </Unit29>
       <Unit30>
-        <Filename Value="nala.tpoint.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.TPoint"/>
-      </Unit30>
-      <Unit31>
         <Filename Value="..\units\linux\nala.xlib.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.XLib"/>
-      </Unit31>
-      <Unit32>
+      </Unit30>
+      <Unit31>
         <Filename Value="..\units\nala.windowinfo.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.WindowInfo"/>
-      </Unit32>
-      <Unit33>
+      </Unit31>
+      <Unit32>
         <Filename Value="..\units\linux\nala.window.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Window"/>
-      </Unit33>
-      <Unit34>
+      </Unit32>
+      <Unit33>
         <Filename Value="nala.autocomplete.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.AutoComplete"/>
-      </Unit34>
-      <Unit35>
+      </Unit33>
+      <Unit34>
         <Filename Value="nala.scriptparser.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.ScriptParser"/>
-      </Unit35>
-      <Unit36>
+      </Unit34>
+      <Unit35>
         <Filename Value="laz\nala.syncompletion.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.SynCompletion"/>
-      </Unit36>
-      <Unit37>
+      </Unit35>
+      <Unit36>
         <Filename Value="..\units\linux\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit37>
-      <Unit38>
+      </Unit36>
+      <Unit37>
         <Filename Value="..\units\osutils_header.inc"/>
         <IsPartOfProject Value="True"/>
-      </Unit38>
-      <Unit39>
+      </Unit37>
+      <Unit38>
         <Filename Value="..\units\windows\nala.window.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Window"/>
-      </Unit39>
-      <Unit40>
+      </Unit38>
+      <Unit39>
         <Filename Value="..\units\windows\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit40>
-      <Unit41>
+      </Unit39>
+      <Unit40>
         <Filename Value="..\units\windows\nala.mouse.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Mouse"/>
-      </Unit41>
-      <Unit42>
+      </Unit40>
+      <Unit41>
         <Filename Value="nala.templateform.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="TemplateForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="nala.TemplateForm"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\units\nala.tpoint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.TPoint"/>
       </Unit42>
+      <Unit43>
+        <Filename Value="..\units\imports\nala.imports.tpoint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.TPoint"/>
+      </Unit43>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

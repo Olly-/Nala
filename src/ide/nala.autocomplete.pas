@@ -299,25 +299,24 @@ end;
 
 procedure TNalaAutoComplete.GetExpression(out Expression: String; out StartPos: UInt32);
 var
-  i: Integer;
+  i: Int32;
   Inside: Boolean;
   Text: String;
 begin
   Expression := '';
   StartPos := 0;
 
+  Text := LowerCase(Copy(Editor.LineText, 1, Editor.CaretX - 1));
   Inside := False;
-
-  Text := LowerCase(Copy(Editor.LineText, 1, Editor.CaretX));
 
   for i := Length(Text) downto 1 do
     case Text[i] of
       ')': Inside := True;
       '(': if (not Inside) then Break else Inside := False;
-      ' ': Break;
+      ' ': if (not Inside) then Break;
       else
         if (not Inside) then
-          Insert(Text[i], Expression, 1);
+          Expression := Text[i] + Expression;
     end;
 
   StartPos := Editor.SelStart - i - 1;
@@ -542,6 +541,7 @@ begin
     FillItems();
 
     DoSearch(Pos);
+    Position := Pos;
   finally
     ItemList.EndUpdate;
     FItems.EndUpdate;

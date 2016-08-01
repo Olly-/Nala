@@ -11,11 +11,11 @@ uses
 { Records }
 
 type
-  PPoint = ^TPoint;
   TPoint = packed record X, Y: Int32; end;
+  PPoint = ^TPoint;
 
-  PBox = ^TBox;
   TBox = packed record X1, Y1, X2, Y2: Int32; end;
+  PBox = ^TBox;
 
   PRGB32 = ^TRGB32;
   TRGB32 = packed record

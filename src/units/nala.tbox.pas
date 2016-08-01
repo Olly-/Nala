@@ -14,7 +14,7 @@ type
 
   { TBoxHelper }
 
-  TBoxHelper = record helper for TBox
+  TBoxHelper = record Helper for TBox
   private
     function getWidth: Int32;
     function getHeight: Int32;
