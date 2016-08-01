@@ -22,7 +22,7 @@ type
   public
     property LastModified: TDateTime read FLastModified write FLastModified;
 
-    procedure ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: pointer); override;
+    procedure ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: Pointer); override;
 
     procedure Load(Path: String);
     procedure Save(Path: String);
@@ -81,6 +81,8 @@ begin
 end;
 
 procedure TNalaSynEdit.ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: pointer);
+var
+  p: TPoint;
 begin
   inherited ExecuteCommand(Command, AChar, Data);
 
@@ -106,6 +108,12 @@ begin
      ((Command >= ecUndo) and (Command <= ecPaste)) or
       (Command = ecString) or (Command = ecTab) then
        FLastModified := Now();
+
+  if (AChar = '.') then
+  begin
+    p := ClientToScreen(Point(CaretXPix, CaretYPix + LineHeight + 1));
+    FAutoComplete.Execute('', p.x, p.y);
+  end;
 end;
 
 procedure TNalaSynEdit.DoSpecialLineMarkup(Sender: TObject; Line: Integer; var Special: Boolean; AMarkup: TSynSelectedColor);
