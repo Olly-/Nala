@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils,
-  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree, nala.Dictionary, lpexceptions;
+  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree, nala.Dictionary, lpexceptions, ffi, lpffi, lpffiwrappers;
 
 type
 
@@ -40,11 +40,11 @@ type
 
   { TLPCompiler }
 
-  TLPImport = (lpiCore, lpiTime, lpiString, lpiBox, lpiPoint);
+  TLPImport = (lpiCore, lpiTime, lpiString, lpiBox, lpiPoint, lpiThreading);
   TLPImports = set of TLPImport;
 
 const
-  AllImports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox, lpiPoint];
+  AllImports: TLPImports = [lpiCore, lpiTime, lpiString, lpiBox, lpiPoint, lpiThreading];
 
 type
   TLPCompiler = class(TLapeCompiler)
@@ -58,7 +58,8 @@ type
     function addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar; override;
 
     function addGlobalType(Str: lpString; AName: lpString): TLapeType; override;
-    function addGlobalType(Typ: TLapeType; AName: lpString=''; ACopy: Boolean = True): TLapeType; override;
+    function addGlobalType(Typ: TLapeType; AName: lpString = ''; ACopy: Boolean = True): TLapeType; override;
+    function addGlobalType(Str: lpString; AName: lpString; ABI: TFFIABI): TLapeType; overload;
 
     function addGlobalVar(Value: Extended; AName: lpString): TLapeGlobalVar; override;
     function addGlobalVar(Value: Int32; AName: lpString): TLapeGlobalVar; override;
@@ -81,7 +82,8 @@ type
 implementation
 
 uses
-  nala.Imports.Time, nala.Imports.Strings, nala.Imports.TBox, nala.Imports.TPoint, nala.Imports.Core;
+  nala.Imports.Time, nala.Imports.Strings, nala.Imports.TBox, nala.Imports.TPoint, nala.Imports.Core,
+  nala.Imports.Threading, typinfo;
 
 { TLPCompilerDump }
 
@@ -185,6 +187,15 @@ begin
   Result := inherited;
 end;
 
+function TLPCompiler.addGlobalType(Str: lpString; AName: lpString; ABI: TFFIABI): TLapeType;
+begin
+  with addGlobalType(Str, '_' + AName) do
+  begin
+    Result := addGlobalType('native (_' + AName + ', ' + GetEnumName(TypeInfo(TFFIABI), Ord(ABI)) + ')', AName);
+    Name := '!' + AName;
+  end;
+end;
+
 function TLPCompiler.addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar;
 begin
   AppendDump(AHeader + ' begin end');
@@ -276,15 +287,21 @@ begin
 
   inherited Create(TLapeTokenizerString.Create(AScript));
 
-  InitializePascalScriptBasics(Self, [psiSettings, psiExceptions, psiTypeAlias]);
+  InitializeFFI(Self);
+  InitializePascalScriptBasics(Self);
   ExposeGlobals(Self);
 
   try
+    StartImporting;
+
     if (lpiCore in Imports) then Import_Core(Self, Thread);
     if (lpiString in Imports) then Import_String(Self);
     if (lpiBox in Imports) then Import_TBox(Self);
     if (lpiTime in Imports) then Import_Time(Self);
     if (lpiPoint in Imports) then Import_TPoint(Self);
+    if (lpiThreading in Imports) then Import_Threading(Self, Thread);
+
+    EndImporting;
   except
     on e: Exception do
       LapeException('Exception on importing unit: ' + e.Message);

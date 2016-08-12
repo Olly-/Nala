@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils,
   lpcompiler, lptypes, lpvartypes, lpeval, lpinterpreter, lpexceptions, lpparser,
-  nala.LapeCompiler, nala.ListBox;
+  nala.LapeCompiler, nala.ListBox, fgl, nala.Thread;
 
 type
   EMessageType = (mtMessage, mtError, mtNote);
@@ -28,6 +28,10 @@ type
 
     FMessageBox: TNalaListBox;
     FMessageBuffer: String;
+
+    FThreads: TNalaThreadList;
+
+    procedure KillThreads;
 
     function getRunning: Boolean;
     procedure setRunning(AValue: Boolean);
@@ -57,6 +61,8 @@ type
     procedure MessageWriteLn(MessageType: EMessageType = mtMessage);
     procedure MessageWriteLn(constref Str: String; MessageType: EMessageType = mtMessage); overload;
 
+    procedure AddThread(Thread: TNalaThread);
+
     constructor Create;
   end;
 
@@ -66,6 +72,25 @@ uses
   nala.OSUtils, nala.Time;
 
 { TNalaScriptThread }
+
+procedure TNalaScriptThread.KillThreads;
+var
+  Thread: TNalaThread;
+begin
+  Thread := FThreads.Pop;
+  if (Thread = nil) then
+    Exit;
+
+  Writeln('Some threads haven''t been terminated, we''re going to (unsafely) kill them');
+
+  while (Thread <> nil) do
+  begin
+    if (KillThread(Thread.Handle) <> 0) then
+      Writeln('Failed to kill thread: ', Thread.Handle);
+
+    Thread := FThreads.Pop;
+  end;
+end;
 
 function TNalaScriptThread.getRunning: Boolean;
 begin
@@ -150,6 +175,8 @@ begin
         MessageWriteLn('Runtime error (FPC): ' + e.Message, mtError);
     end;
 
+    KillThreads;
+
     if (not Failed) then
     begin
       if ((GetTickCount64() - StartTime.Ticks) <= 60000) then
@@ -166,6 +193,8 @@ begin
   Writeln('Script thread[', ThreadID, '] safely terminated');
   if (FCompiler <> nil) then
     FCompiler.Free;
+
+  FThreads.Free;
 
   inherited DoTerminate;
 end;
@@ -204,14 +233,22 @@ begin
   MessageWriteLn(MessageType);
 end;
 
+procedure TNalaScriptThread.AddThread(Thread: TNalaThread);
+begin
+  FThreads.Add(Thread);
+end;
+
 constructor TNalaScriptThread.Create;
 begin
   inherited Create(True);
+
   FreeOnTerminate := True;
 
   FRunning := bFalse;
   FCompiler := nil;
   FScript := '';
+
+  FThreads := TNalaThreadList.Create;
 end;
 
 end.
