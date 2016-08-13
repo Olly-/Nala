@@ -65,6 +65,9 @@ begin
     addGlobalType('array of Double', 'TDoubleArray');
     addGlobalType('array of TDoubleArray', 'T2DDoubleArray');
 
+    addGlobalType('array of Char', 'TCharArray');
+    addGlobalType('array of TCharArray', 'T2DCharArray');
+
     addGlobalType('packed record X1, Y1, X2, Y2: Int32; end;', 'TBox');
     addGlobalType('array of TBox', 'TBoxArray');
     addGlobalType('array of TBoxArray', 'T2DBoxArray');

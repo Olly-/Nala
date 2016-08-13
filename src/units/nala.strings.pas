@@ -6,7 +6,7 @@ unit nala.Strings;
 interface
 
 uses
-  Classes, SysUtils, base64, nala.Types;
+  Classes, SysUtils, base64, nala.Types, md5, sha1;
 
 type
 
@@ -21,16 +21,25 @@ type
     function Before(constref Delimiter: String): String;
 
     function PosEx(constref SubStr: String): TIntArray;
-    function Pos(constref SubStr: String): Integer;
-    function PosR(constref SubStr: String): Integer;
-    function Count(constref SubStr: String): Integer;
+    function Pos(constref SubStr: String; Offset: Int32 = 1): Int32;
+    function Pos(constref SubStrings: TStringArray; Offset: Int32 = 1): Int32; overload;
+    function PosR(constref SubStr: String): Int32;
 
     function Explode(constref Delimiter: String): TStringArray;
 
     function Replace(constref SubStr, ReplaceStr: String; Flags: TReplaceFlags): String;
 
-    function GetNumbers: TIntArray;
-    function GetLetters: TStringArray;
+    function ExtractLetters: String;
+    function ExtractNumbers: String;
+    function Extract(constref Chars: TCharArray): String;
+
+    function Upper: String;
+    function Lower: String;
+
+    function Trim: String;
+
+    function MD5: String;
+    function SHA1: String;
   end;
 
 implementation
@@ -99,17 +108,30 @@ begin
   SetLength(Result, h);
 end;
 
+function TNalaStringHelper.Pos(constref SubStrings: TStringArray; Offset: Int32): Int32;
+var
+  p, i: Int32;
+begin
+  for i := Offset to High(SubStrings) do
+  begin
+    p := Self.Pos(SubStrings[i], Offset);
+    if (p > 0) then
+      Exit(p);
+  end;
+  Exit(0);
+end;
+
 {*
  Returns first position of the given pattern/substring from left.
 *}
-function TNalaStringHelper.Pos(constref SubStr: String): Integer;
+function TNalaStringHelper.Pos(constref SubStr: String; Offset: Int32): Int32;
 var
-  HitPos,LenSub,i: UInt32;
+  HitPos, LenSub, i: UInt32;
 begin
   LenSub := Length(SubStr);
-  if LenSub = 0 then Exit(0);
+  if (LenSub = 0) then Exit(0);
   HitPos := 1;
-  for i:=1 to Length(Self) do
+  for i := Offset to Length(Self) do
   begin
     if Self[i] = SubStr[HitPos] then
     begin
@@ -125,14 +147,14 @@ end;
 {*
  Returns first position of the given pattern/substring from right.
 *}
-function TNalaStringHelper.PosR(constref SubStr: String): Integer;
+function TNalaStringHelper.PosR(constref SubStr: String): Int32;
 var
-  HitPos,LenSub,i: UInt32;
+  HitPos, LenSub, i: UInt32;
 begin
   LenSub := Length(SubStr);
-  if LenSub = 0 then Exit(0);
+  if (LenSub = 0) then Exit(0);
   HitPos := LenSub;
-  for i:=Length(Self) downto 1 do
+  for i := Length(Self) downto 1 do
   begin
     if Self[i] = SubStr[HitPos] then
     begin
@@ -145,14 +167,9 @@ begin
   Exit(0);
 end;
 
-function TNalaStringHelper.Count(constref SubStr: String): Integer;
-begin
-  Result := Length(Self.PosEx(SubStr));
-end;
-
 function TNalaStringHelper.Replace(constref SubStr, ReplaceStr: String; Flags: TReplaceFlags): String;
 var
-  Hi,HiSub,HiRep,i,j,k: Integer;
+  Hi,HiSub,HiRep,i,j,k: Int32;
   Prev,Curr:Integer;
   Subs: TIntArray;
 begin
@@ -212,36 +229,65 @@ begin
   end;
 end;
 
-function TNalaStringHelper.GetNumbers: TIntArray;
+function TNalaStringHelper.ExtractLetters: String;
 var
-  i, c: Int32;
+  i: Int32;
 begin
-  SetLength(Result, 0);
-  c := 0;
-
-  for i := 1 to High(Self) do
-    if (Self[i] in ['0'..'9']) then
-    begin
-      SetLength(Result, c + 1);
-      Result[c] := StrToInt(Self[i]);
-      Inc(c);
-    end;
-end;
-
-function TNalaStringHelper.GetLetters: TStringArray;
-var
-  i, c: Int32;
-begin
-  SetLength(Result, 0);
-  c := 0;
+  Result := '';
 
   for i := 1 to High(Self) do
     if (Self[i] in ['a'..'z', 'A'..'Z']) then
-    begin
-      SetLength(Result, c + 1);
-      Result[c] := Self[i];
-      Inc(c);
-    end;
+      Result += Self[i];
+end;
+
+function TNalaStringHelper.ExtractNumbers: String;
+var
+  i: Int32;
+begin
+  Result := '';
+
+  for i := 1 to High(Self) do
+    if (Self[i] in ['0'..'9']) then
+      Result += Self[i];
+end;
+
+function TNalaStringHelper.Extract(constref Chars: TCharArray): String;
+var
+  CharSet: set of Char;
+  i: Int32;
+begin
+  Result := '';
+
+  for i := 0 to High(Chars) do
+    Include(CharSet, Chars[i]);
+  for i := 1 to Length(Self) do
+    if (Self[i] in CharSet) then
+      Result += Self[i];
+end;
+
+function TNalaStringHelper.Upper: String;
+begin
+  Result := UpperCase(Self);
+end;
+
+function TNalaStringHelper.Lower: String;
+begin
+  Result := LowerCase(Self);
+end;
+
+function TNalaStringHelper.Trim: String;
+begin
+  Result := SysUtils.Trim(Self);
+end;
+
+function TNalaStringHelper.MD5: String;
+begin
+  Result := MD5Print(MD5String(Self));
+end;
+
+function TNalaStringHelper.SHA1: String;
+begin
+  Result := SHA1Print(SHA1String(Self));
 end;
 
 {*
