@@ -188,11 +188,22 @@ begin
 end;
 
 function TLPCompiler.addGlobalType(Str: lpString; AName: lpString; ABI: TFFIABI): TLapeType;
+var
+  isDumping: Boolean;
 begin
+  isDumping := FDumping;
+  FDumping := False;
+
   with addGlobalType(Str, '_' + AName) do
   begin
     Result := addGlobalType('native (_' + AName + ', ' + GetEnumName(TypeInfo(TFFIABI), Ord(ABI)) + ')', AName);
     Name := '!' + AName;
+  end;
+
+  if (isDumping) then
+  begin
+    FDumping := True;
+    AppendDump('type ' + AName + ' = ' + Str);
   end;
 end;
 
