@@ -37,8 +37,9 @@ begin
 
   Name := AName;
   Caption := AName;
+  ShowInTaskBar := stNever;
 
-  DockMaster.MakeDockable(Self);
+  DockMaster.MakeDockable(Self, False);
   Site.Header.Color := clForm;
 end;
 

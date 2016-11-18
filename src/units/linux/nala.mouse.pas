@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, xlib,
-  nala.MouseBase, nala.CoreTypes, nala.XLib, nala.Window;
+  nala.MouseBase, nala.Types, nala.XLib, nala.Window;
 
 type
 

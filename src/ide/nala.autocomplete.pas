@@ -1,74 +1,71 @@
 unit nala.AutoComplete;
 
 {$mode objfpc}{$H+}
-{$Inline on}
 
 interface
 
 uses
-  Classes, SysUtils, nala.SynCompletion, nala.CodeParser, Graphics, nala.ScriptParser;
+  Classes, SysUtils, nala.SynCompletion, nala.Parser.Script,
+  Controls, Graphics, Forms, nala.Types, ImgList, nala.CompletionItem, nala.Parser.Code;
 
 type
+  TNalaSynCompletionForm = class;
 
-  { TTypeTree }
-
-  TTypeTree = class(TObject)
+  TNalaSynCompletionFormHint = class(THintWindow)
   private
-  type
-    TTreeItem = record
-      Text: String;
-      Dimensions: UInt32;
-      Typ: TType;
-      Rec: TCPRecord;
-    end;
-
-    TTree = array of TTreeItem;
-  private
-    FTree: TTree;
-    FParser: TScriptParser;
-
-    function ParseStartItem: Boolean;
-    function ParseItem(LastItem: TTreeItem; var Item: TTreeItem): Boolean;
+    FCompletionForm: TNalaSynCompletionForm;
+    FFontHeight: Int32;
+    FItem: TCompletionItem_Base;
   public
-    function Parse(out ADecl: TType; out ARecord: TCPRecord): Boolean;
+    property FontHeight: Int32 read FFontHeight;
 
-    constructor Create(ATree: String; const AParser: TScriptParser);
+    procedure Paint; override;
+    procedure Show(Index: Int32);
+
+    constructor Create(AOwner: TComponent); override;
   end;
 
-  { TItemData }
-
-  TItemData = class(TObject)
+  TNalaSynCompletionForm = class(TSynCompletionForm)
+  private
+    FHintForm: TNalaSynCompletionFormHint;
   public
-    FPaintString: String;
-    FColumnString: String;
+    property HintForm: TNalaSynCompletionFormHint read FHintForm;
 
-    constructor Create(Column, Delimiter, Name, Typ: String);
-    constructor Create(Decl: TDeclMethod);
+    procedure ShowItemHint(AIndex: Integer); override;
+    procedure HideItemHint; override;
+
+    constructor Create(AOwner: TComponent); override;
   end;
-
-  { TNalaAutoComplete }
 
   TNalaAutoComplete = class(TSynCompletion)
   private
+  type
+    TExpression = record
+      Pos: Int32;
+      Text: String;
+      hasDot: Boolean;
+    end;
+  private
     FItems: TStringList;
-    FColumnWidth: Integer;
+    FImageWidth: Int32;
+    FImages: TImageList;
+    FHintForm: TNalaSynCompletionFormHint;
 
-    procedure GetExpression(out Expression: String; out StartPos: UInt32);
-    procedure FillItems();
+    function GetExpr: TExpression;
 
-    procedure AddVariable(Decl: TDeclVariable);
-    procedure AddMethod(Decl: TDeclMethod);
-    procedure AddConstant(Decl: TDeclConstant);
-    procedure AddType(Decl: TCPTypeDeclaration);
-    procedure AddType(AType: TType); overload;
-    procedure AddFields(ARecord: TCPRecord);
-    procedure AddParams(Decl: TDeclMethod);
-    procedure AddSelf(Typ: String);
-    procedure AddResult(Typ: String);
+    procedure addMethod(Decl: TDictionaryItem_Method);
+    procedure addVariable(AName, ATyp: String; ADefault: String = '');
+    procedure addVariable(AVariable: TCPVariable); overload;
+    procedure addRecordFields(ARecord: TCPRecord);
+    procedure addType(AType: TCPType);
+    procedure addConstant(AConstant: TCPConstant);
 
-    function DoPaint(const AKey: String; ACanvas: TCanvas; X, Y: Integer; Selected: Boolean; Index: Integer): Boolean;
-    function DoMeasure(const AKey: String; ACanvas: TCanvas; Selected: Boolean; Index: Integer): Classes.TPoint;
+    procedure addItems;
+
+    function DoPaint(const Key: String; Canvas: TCanvas; X, Y: Integer; Selected: Boolean; Index: Integer): Boolean;
   public
+    function GetCompletionFormClass: TSynBaseCompletionFormClass; override;
+
     procedure DoSearch(var APosition: Integer);
     procedure DoExecute(Sender: TObject);
 
@@ -79,422 +76,286 @@ type
 implementation
 
 uses
-  strutils, nala.Helpers, Forms, nala.Strings, nala.Types;
+  strutils, Types, LCLIntf, LCLType, math, nala.MainForm,
+  nala.Parser.Include, nala.Environment, dateutils, nala.SynEdit
+  {$IFDEF WINDOWS},
+    Windows
+  {$ENDIF};
 
-{ TTypeTree }
-
-function TTypeTree.ParseStartItem: Boolean;
-var
-  Decl: TDeclaration;
-  Kind: TCPTypeKind;
+procedure TNalaSynCompletionForm.ShowItemHint(AIndex: Integer);
 begin
-  Result := False;
-  Kind := nil;
-  if (Length(FTree) = 0) then
+  if (AIndex = Self.Position) then
+    FHintForm.Show(AIndex);
+end;
+
+procedure TNalaSynCompletionForm.HideItemHint;
+begin
+  FHintForm.Visible := False;
+end;
+
+constructor TNalaSynCompletionForm.Create(AOwner: Tcomponent);
+begin
+  inherited Create(AOwner);
+
+  FHintForm := TNalaSynCompletionFormHint.Create(Self);
+  FHintForm.Color := clWhite;
+  FHintForm.Visible := False;
+  FHintForm.DoubleBuffered := True;
+
+  {$IFDEF WINDOWS}
+    SetClassLong(FHintForm.Handle, GCL_STYLE, GetClassLong(FHintForm.Handle, GCL_STYLE) and not CS_DROPSHADOW);
+  {$ENDIF}
+end;
+
+procedure TNalaSynCompletionFormHint.Paint;
+begin
+  Canvas.Pen.Color := clBlack;
+  Canvas.Brush.Color := clBlack;
+  Canvas.FrameRect(ClientRect);
+
+  FItem.Paint(2, 1, Odd(FCompletionForm.Position));
+end;
+
+procedure TNalaSynCompletionFormHint.Show(Index: Int32);
+var
+  P: TPoint;
+  Size: TPoint;
+begin
+  if (Index < 0) or (Index >= FCompletionForm.ItemList.Count) then
     Exit;
 
-  if (FParser.FindDeclaration(FTree[0].Text, Decl)) then
-  begin
-    // Point(x, y).
-    if (Decl.ClassType = TDeclMethod) then
-    begin
-      if (TDeclMethod(Decl).ReturnType = '') then
-        Exit;
-
-      Kind := TDeclMethod(Decl).ReturnKind;
-    end else
-    // var x: TPoint
-    if (Decl.ClassType = TDeclVariable) then
-    begin
-      if (TDeclVariable(Decl).Typ = '') then
-        Exit;
-
-      Kind := TDeclVariable(Decl).Kind;
-    end else
-    // const x: TPoint
-    if (Decl.ClassType = TDeclConstant) then
-    begin
-      if (TDeclConstant(Decl).Typ = '') then
-        Exit;
-
-      Kind := TDeclConstant(Decl).Kind;
-    end else
-    // TPoint.
-    if (Decl.ClassType = TCPTypeDeclaration) then
-    begin
-      if (FParser.FindType(LowerCase(TCPTypeDeclaration(Decl).Name), FTree[0].Typ)) then
-        Exit(True);
-    end;
-
-    if (Kind = nil) then
-    begin
-      Writeln('AutoComplete: Start kind = nil');
-      Exit;
-    end;
-
-    case Kind.Typ of
-      tkRecord:
-        begin
-          FTree[0].Rec := Kind.GetRecord;
-          Result := FTree[0].Rec <> nil;
-        end;
-
-      tkArray:
-        begin
-          Result := (Kind.GetArray.Dimensions = FTree[0].Dimensions) and
-                    (FParser.FindType(LowerCase(Kind.GetArray.Typ), FTree[0].Typ));
-        end;
-
-      tkType:
-        begin
-          if (FTree[0].Dimensions > 0) then
-            Result := FParser.DownArray(LowerCase(Kind.CleanText), FTree[0].Dimensions, FTree[0].Typ)
-          else
-            Result := FParser.FindType(LowerCase(Kind.CleanText), FTree[0].Typ);
-        end;
-
-      else
-        Writeln('AutoComplete: Bad kind: ', Kind.Typ);
-    end;
-  end else
-    Writeln('AutoComplete: Start declaration not found');
-end;
-
-function TTypeTree.ParseItem(LastItem: TTreeItem; var Item: TTreeItem): Boolean;
-var
-  Kind: TCPTypeKind;
-  Method: TDeclMethod;
-  i: Integer;
-begin
-  Result := False;
-  Kind := nil;
-
-  if (LastItem.Typ <> nil) then
-  begin
-    if (LastItem.Typ.FindFunction(Item.Text, Method)) then
-    begin
-      if (Method.ReturnType = '') then
-        Exit;
-
-      Kind := Method.ReturnKind;
-    end else
-    if (LastItem.Typ.FindField(Item.Text, Kind)) then
-    begin
-      if (Kind.CleanText = '') then
-        Exit;
-    end;
-  end else
-  if (LastItem.Rec <> nil) then
-  begin
-    if (LastItem.Rec.FieldCount = 0) then
-      Exit;
-
-    for i := 0 to LastItem.Rec.FieldCount - 1 do
-      if (LastItem.Rec.Fields[i].Name = Item.Text) then
-      begin
-        Kind := LastItem.Rec.Fields[i].Kind;
-        Break;
-      end;
-  end;
-
-  if (Kind = nil) then
-  begin
-    Writeln('AutoComplete: Kind = nil');
+  if (FCompletionForm.ItemList.Objects[Index] = nil) then
     Exit;
-  end;
 
-  case Kind.Typ of
-    tkRecord:
-      begin
-        Item.Rec := Kind.GetRecord;
-        Result := Item.Rec <> nil;
-      end;
+  P.X := FCompletionForm.Left + FCompletionForm.Width + 1;
+  P.Y := Max(FCompletionForm.Top, FCompletionForm.ClientToScreen(Types.Point(0, (Index - FCompletionForm.ScrollBar.Position) * FCompletionForm.FontHeight)).Y);
 
-    tkArray:
-      begin
-        Result := (Kind.GetArray.Dimensions = Item.Dimensions) and
-                  (FParser.FindType(LowerCase(Kind.GetArray.Typ), Item.Typ));
-      end;
+  FItem := FCompletionForm.ItemList.Objects[Index] as TCompletionItem_Base;
+  Size := Types.Point(FItem.Size.X + 4, FItem.Size.Y + 4);
 
-    tkType:
-      begin
-        if (Item.Dimensions > 0) then
-          Result := FParser.DownArray(LowerCase(Kind.CleanText), Item.Dimensions, Item.Typ)
-        else
-          Result := FParser.FindType(LowerCase(Kind.CleanText), Item.Typ);
-      end;
-
-    else
-      Writeln('AutoComplete: Bad kind: ', Kind.Typ);
-  end;
-end;
-
-function TTypeTree.Parse(out ADecl: TType; out ARecord: TCPRecord): Boolean;
-var
-  i: Integer;
-begin
-  if (not Self.ParseStartItem()) then
-    Exit(False);
-
-  for i := 1 to High(FTree) do
-    if (not Self.ParseItem(FTree[i - 1], FTree[i])) then
-    begin
-      Writeln('AutoComplete: Didn''t find ', FTree[i].Text);
-      Exit(False);
-    end;
-
-  ADecl := FTree[High(FTree)].Typ;
-  ARecord := FTree[High(FTree)].Rec;
-
-  Result := True;
-end;
-
-constructor TTypeTree.Create(ATree: String; const AParser: TScriptParser);
-var
-  Arr: TStringArray;
-  i: Integer;
-begin
-  inherited Create;
-
-  FParser := AParser;
-
-  Arr := LowerCase(ATree).Explode('.');  // TODO: only handles [0][0] (not [0, 0]);
-  SetLength(FTree, Length(Arr));
-
-  for i := 0 to High(FTree) do
+  if (Self.Visible) then
   begin
-    FTree[i] := Default(TTreeItem);
-    FTree[i].Dimensions := Arr[i].Count('[');
-    if (FTree[i].Dimensions > 0) then
-      FTree[i].Text := Arr[i].Before('[')
-    else
-      FTree[i].Text := Arr[i];
-  end;
+    Self.BoundsRect := Types.Rect(P.X, P.Y, P.X + Size.X, P.Y + Size.Y);
+    Self.Invalidate;
+  end else
+    Self.ActivateWithBounds(Types.Rect(P.X, P.Y, P.X + Size.X, P.Y + Size.Y), '');
 end;
 
-{ TItemData }
-
-constructor TItemData.Create(Decl: TDeclMethod);
+constructor TNalaSynCompletionFormHint.Create(AOwner: TComponent);
 begin
-  FPaintString := '{B+}' + Decl.Name + '{B-}' + '{I+}' + Decl.ParameterText + '{I-}';
-  if (Decl.ReturnType = '') then
-    FColumnString := '{C=clNavy}procedure{C=0}'
-  else
-  begin
-    FColumnString := '{C=clNavy}function{C=0}';
-    FPaintString += ': ' + '{C=clBlue}' + Decl.ReturnType + '{C=0}';
-  end;
+  inherited Create(AOwner);
 
-  if (Decl.Directive = mdOverload) then
-    FPaintString += '; ' + '{C=clMaroon}overload{C=0}';
+  FCompletionForm := TNalaSynCompletionForm(AOwner);
+  FFontHeight := Graphics.GetFontData(Canvas.Font.Reference.Handle).Height;
 end;
 
-constructor TItemData.Create(Column, Delimiter, Name, Typ: String);
-begin
-  FPaintString := '{B+}' + Name + '{B-}' + Delimiter + '{C=clBlue}' + Typ + '{C=0}';
-  FColumnString := '{C=clNavy}' + Column + '{C=0}';
-end;
-
-{ TNalaAutoComplete }
-
-procedure TNalaAutoComplete.GetExpression(out Expression: String; out StartPos: UInt32);
+function TNalaAutoComplete.GetExpr: TExpression;
 var
   i: Int32;
-  Inside: Boolean;
   Text: String;
+  InParams: Boolean = False;
 begin
-  Expression := '';
-  StartPos := 0;
-
+  Result := Default(TExpression);
   Text := LowerCase(Copy(Editor.LineText, 1, Editor.CaretX - 1));
-  Inside := False;
 
   for i := Length(Text) downto 1 do
     case Text[i] of
-      ')': Inside := True;
-      '(': if (not Inside) then Break else Inside := False;
-      ' ': if (not Inside) then Break;
+      ')':
+        InParams := True;
+      '(':
+        if (not InParams) then
+          Break
+        else
+          InParams := False;
+      ' ':
+        if (not InParams) then
+         Break;
       else
-        if (not Inside) then
-          Expression := Text[i] + Expression;
+        if (not InParams) then
+          Result.Text := Text[i] + Result.Text;
     end;
 
-  StartPos := Editor.SelStart - i - 1;
-  if (LastDelimiter('.', Expression) < Length(Expression)) then
-    Expression := Copy(Expression, 1, LastDelimiter('.', Expression));
+  Result.hasDot := Pos('.', Result.Text) > 0;
+  if (Result.hasDot) then
+    Result.Text := Copy(Result.Text, 1, LastDelimiter('.', Result.Text));
+
+  Result.Pos := Editor.SelStart - i - 1;
 end;
 
-procedure TNalaAutoComplete.FillItems;
+{ TODO : Fix TPointArray.Combine. }
+
+procedure TNalaAutoComplete.addItems;
 var
   Parser: TScriptParser;
-  i: Integer;
-  Items: TList;
-  Decl: TDeclaration;
-  Typ: TType;
-  Rec: TCPRecord;
-  Tree: TTypeTree;
-  Decls: TDeclarationArray;
-  Expression: String;
-  ExpressionPos: UInt32;
-begin
-  GetExpression(Expression, ExpressionPos);
 
-  Parser := TScriptParser.Create(NalaScript);
-  Parser.Run(Editor.Lines.Text, Editor.SelStart, ExpressionPos);
-
-  Writeln('AutoComplete: Expression = ', Expression);
-  Writeln('AutoComplete: Current String = ', CurrentString);
-
-  if (Pos('.', Expression) > 0) then
+  procedure addDictionaryType(Name: String);
+  var
+    Method: TCPMethod;
   begin
-    Tree := TTypeTree.Create(Expression, Parser);
+    if (not Parser.Dictionary.HasType(Name)) then
+      Exit;
 
-    try
-      if (Tree.Parse(Typ, Rec)) then
-      begin
-        if (Typ <> nil) then
-          AddType(Typ);
-        if (Rec <> nil) then
-          AddFields(Rec);
-      end;
-    finally
-      Tree.Free;
-    end;
-  end else
-  begin
-    Items := Parser.Items;
-
-    // Locals
-    if (Parser.LocalMethod <> nil) then
+    with Parser.Dictionary.GetType(Name) do
     begin
-      if (Parser.LocalMethod.ObjectName <> '') then
+      for Method in Methods do
+        if (FItems.IndexOf(Method.Name) = -1) and (Parser.Dictionary.HasMethod(Name + '.' + Method.Name)) then
+          Self.addMethod(Parser.Dictionary.GetMethod(Name + '.' + Method.Name));
+
+      if (Decl.Kind.Typ = tkRecord) then
       begin
-        AddSelf(Parser.LocalMethod.ObjectName);
+        addRecordFields(Decl.Kind.GetRecord());
 
-        if (Parser.FindType(Lowercase(Parser.LocalMethod.ObjectName), Typ)) then
-          AddType(Typ);
+        if (Decl.Kind.GetRecord().Ancestor <> '') then
+          addDictionaryType(Decl.Kind.GetRecord().Ancestor);
       end;
-
-      if (Parser.LocalMethod.ReturnType <> '') then
-        AddResult(Parser.LocalMethod.ReturnType);
-
-      AddParams(Parser.LocalMethod);
-
-      Decls := Parser.LocalMethod.GetLocal(mlVariables);
-      for i := 0 to High(Decls) do
-        AddVariable(TDeclVariable(Decls[i]));
-
-      Decls := Parser.LocalMethod.GetLocal(mlConstants);
-      for i := 0 to High(Decls) do
-        AddConstant(TDeclConstant(Decls[i]));
-
-      Decls := Parser.LocalMethod.GetLocal(mlTypes);
-      for i := 0 to High(Decls) do
-        AddType(TCPTypeDeclaration(Decls[i]));
-    end;
-
-    // Globals
-    for i := 0 to Items.Count - 1 do
-    begin
-      Decl := TDeclaration(Items[i]);
-
-      if (Decl.ClassType = TDeclVariable) then
-        AddVariable(TDeclVariable(Decl))
-      else
-      if (Decl.ClassType = TDeclMethod) and (TDeclMethod(Decl).ObjectName = '') then
-        AddMethod(TDeclMethod(Decl))
-      else
-      if (Decl.ClassType = TDeclConstant) then
-        AddConstant(TDeclConstant(Decl))
-      else
-      if (Decl.ClassType = TCPTypeDeclaration) then
-        AddType(TCPTypeDeclaration(Decl))
     end;
   end;
 
-  Parser.Free;
-end;
+  procedure addGlobals(List: TDeclarationList);
+  var
+    i: Int32;
+  begin
+    for i := 0 to List.Count - 1 do
+      if (List[i].ClassType = TCPInclude) and (TCPInclude(List[i]).Declaration <> nil) then
+        AddGlobals(TCodeParser(TCPInclude(List[i]).Declaration).Items)
+      else
+      if (List[i].ClassType = TCPVariable) then
+        AddVariable(List[i] as TCPVariable)
+      else
+      if (List[i].ClassType = TCPConstant) then
+        addConstant(List[i] as TCPConstant)
+      else
+      if (List[i].ClassType = TCPType) then
+        addType(List[i] as TCPType);
+  end;
 
-procedure TNalaAutoComplete.AddVariable(Decl: TDeclVariable);
-begin
-  FItems.AddObject(Decl.Name, TItemData.Create('variable', ': ', Decl.Name, Decl.Typ));
-end;
-
-procedure TNalaAutoComplete.AddMethod(Decl: TDeclMethod);
-begin
-  FItems.AddObject(Decl.Name, TItemData.Create(Decl));
-end;
-
-procedure TNalaAutoComplete.AddConstant(Decl: TDeclConstant);
-begin
-  FItems.AddObject(Decl.Name, TItemData.Create('constant', ' = ', Decl.Name, Decl.Typ));
-end;
-
-procedure TNalaAutoComplete.AddType(Decl: TCPTypeDeclaration);
 var
-  i: Integer;
+  Method: TDictionaryItem_Method;
+  Decl: TDeclaration;
+  Expr: TExpression;
 begin
-  FItems.AddObject(Decl.Name, TItemData.Create('type', ' = ', Decl.Name, Decl.Format(False)));
+  Expr := GetExpr();
+  if (Expr.Pos = 0) then
+    Exit;
 
-  // Add each enum
-  if (Decl.Kind.Typ = tkEnum) then
-    with Decl.Kind.GetEnum do
-      for i := 0 to EnumCount - 1 do
-        FItems.AddObject(Enums[i].Name, TItemData.Create('enum', '', Enums[i].Name, ''));
+  Parser := TNalaSynEdit(Editor).Parse(True);
+
+  if (Expr.hasDot) then
+  try
+    Decl := Parser.TypeOfExpression(Expr.Text);
+
+    if (Decl.ClassType = TCPType) then
+      addDictionaryType(TCPType(Decl).Name)
+    else
+    if (Decl.ClassType = TCPRecord) then
+      addRecordFields(Decl as TCPRecord)
+    else
+      Writeln('Bad type: ', Decl.ClassName);
+  except
+    on e: Exception do
+      Writeln('Error handling expression: ', e.Message);
+  end else
+  begin
+    if (Parser.MethodAtCaret <> nil) then
+      with Parser.MethodAtCaret do
+      begin
+        for Decl in Variables do
+          AddVariable(Decl as TCPVariable);
+        for Decl in Constants do
+          addConstant(Decl as TCPConstant);
+        for Decl in Types do
+          addType(Decl as TCPType);
+
+        if (ReturnType <> '') then
+          addVariable('Result', ReturnType);
+        if (isMethodOfObject) then
+          addVariable('Self', ObjectType);
+      end;
+
+    AddGlobals(Parser.Script.Items);
+    AddGlobals(NalaInclude.Items);
+
+    for Method in Parser.Dictionary.Methods do
+      if (not Method.Decl.isMethodOfObject) then
+        addMethod(Method);
+  end;
 end;
 
-procedure TNalaAutoComplete.AddType(AType: TType);
+procedure TNalaAutoComplete.addMethod(Decl: TDictionaryItem_Method);
 var
-  i: Integer;
+  Item: TCompletionItem_Method;
 begin
-  for i := 0 to High(AType.Methods) do
-    AddMethod(AType.Methods[i]);
-  if (AType.Decl.Kind.Typ = tkRecord) then
-    AddFields(AType.Decl.Kind.GetRecord);
+  Item := TCompletionItem_Method.Create(Decl, FHintForm);
+  FItems.AddObject(Item.Name, Item);
 end;
 
-procedure TNalaAutoComplete.AddFields(ARecord: TCPRecord);
+procedure TNalaAutoComplete.addVariable(AName, ATyp: String; ADefault: String);
 var
-  i: Integer;
+  Item: TCompletionItem_Variable;
+begin
+  Item := TCompletionItem_Variable.Create(AName, ATyp, ADefault, FHintForm);
+  FItems.AddObject(Item.Name, Item);
+end;
+
+procedure TNalaAutoComplete.addVariable(AVariable: TCPVariable);
+var
+  Item: TCompletionItem_Variable;
+begin
+  Item := TCompletionItem_Variable.Create(AVariable, FHintForm);
+  FItems.AddObject(Item.Name, Item);
+end;
+
+procedure TNalaAutoComplete.addRecordFields(ARecord: TCPRecord);
+var
+  i: Int32;
 begin
   for i := 0 to ARecord.FieldCount - 1 do
-    FItems.AddObject(ARecord.Fields[i].Name, TItemData.Create('field', ': ', ARecord.Fields[i].Name, ARecord.Fields[i].Typ));
+    addVariable(ARecord.Fields[i].Name, ARecord.Fields[i].Typ, '');
 end;
 
-procedure TNalaAutoComplete.AddParams(Decl: TDeclMethod);
+procedure TNalaAutoComplete.addType(AType: TCPType);
 var
-  i: Integer;
+  Item: TCompletionItem_Base;
 begin
-  for i := 0 to Decl.ParameterCount - 1 do
-    FItems.AddObject(Decl.Parameter[i].Name, TItemData.Create('param', ': ', Decl.Parameter[i].Name, Decl.Parameter[i].Typ));
+  case AType.Kind.Typ of
+    tkRecord:
+      Item := TCompletionItem_Record.Create(AType, FHintForm);
+    tkEnum:
+      Item := TCompletionItem_Enum.Create(AType, FHintForm);
+    else
+      Item := TCompletionItem_Type.Create(AType, FHintForm);
+  end;
+
+  FItems.AddObject(Item.Name, Item);
 end;
 
-procedure TNalaAutoComplete.AddSelf(Typ: String);
-begin
-  FItems.AddObject('Self', TItemData.Create('var', ': ', 'Self', Typ));
-end;
-
-procedure TNalaAutoComplete.AddResult(Typ: String);
-begin
-  FItems.AddObject('Result', TItemData.Create('var', ': ', 'Result', Typ));
-end;
-
-function TNalaAutoComplete.DoPaint(const AKey: String; ACanvas: TCanvas; X, Y: Integer; Selected: Boolean; Index: Integer): Boolean;
+procedure TNalaAutoComplete.addConstant(AConstant: TCPConstant);
 var
-  Data: TItemData;
+  Item: TCompletionItem_Constant;
 begin
+  Item := TCompletionItem_Constant.Create(AConstant, FHintForm);
+  FItems.AddObject(Item.Name, Item);
+end;
+
+function TNalaAutoComplete.DoPaint(const Key: String; Canvas: TCanvas; X, Y: Integer; Selected: Boolean; Index: Integer): Boolean;
+var
+  Item: TCompletionItem_Base;
+begin
+  Item := ItemList.Objects[Index] as TCompletionItem_Base;
+  if (Item <> nil) then
+  begin
+    FImages.Draw(Canvas, X + 2, Y, Item.Image);
+
+    Canvas.Font.Bold := True;
+    Canvas.TextOut(X + FImageWidth, Y, Item.Name);
+  end;
+
   Result := True;
-
-  Data := TItemData(ItemList.Objects[Index]);
-
-  ACanvas.PrettyTextOut(X, Y, Data.FColumnString);
-  ACanvas.PrettyTextOut(X + FColumnWidth, Y, Data.FPaintString);
 end;
 
-function TNalaAutoComplete.DoMeasure(const AKey: String; ACanvas: TCanvas; Selected: Boolean; Index: Integer): Classes.TPoint;
+function TNalaAutoComplete.GetCompletionFormClass: TSynBaseCompletionFormClass;
 begin
-  Result.Y := FontHeight;
-  Result.X := FColumnWidth + ACanvas.PrettyTextExtent(TItemData(ItemList.Objects[Index]).FPaintString).cx;
+  Result := TNalaSynCompletionForm;
 end;
 
 procedure TNalaAutoComplete.DoSearch(var APosition: Integer);
@@ -528,9 +389,7 @@ end;
 procedure TNalaAutoComplete.DoExecute(Sender: TObject);
 var
   Pos: Integer = 0;
-  t: UInt64;
 begin
-  t := GetTickCount64();
   try
     ItemList.BeginUpdate;
     ItemList.Clear;
@@ -538,7 +397,7 @@ begin
     FItems.BeginUpdate;
     FItems.Clear;
 
-    FillItems();
+    addItems();
 
     DoSearch(Pos);
     Position := Pos;
@@ -546,21 +405,26 @@ begin
     ItemList.EndUpdate;
     FItems.EndUpdate;
   end;
-
-  Writeln('TNalaAutoComplete.DoExecute: ', GetTickCount64() - t, 'ms');
 end;
 
 constructor TNalaAutoComplete.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  Width := 400;
+  Width := 225;
   ShowSizeDrag := True;
+  SelectedColor := clListSelected;
+
+
+  TheForm.OddBackgroundColor := clListOdd;
+  TheForm.BackgroundColor := clListEven;
+  TheForm.TextSelectedColor := clBlack;
+
+  FHintForm := TNalaSynCompletionForm(TheForm).HintForm;
 
   OnExecute := @DoExecute;
   OnSearchPosition := @DoSearch;
   OnPaintItem := @DoPaint;
-  OnMeasureItem := @DoMeasure;
 
   FItems := TStringList.Create;
   FItems.Sorted := True;
@@ -569,7 +433,8 @@ begin
 
   TStringList(ItemList).OwnsObjects := False;
 
-  FColumnWidth := TheForm.Canvas.TextWidth('procedure') + 6;
+  FImages := NalaForm.Images16x16;
+  FImageWidth := FImages.Width + 6;
 end;
 
 destructor TNalaAutoComplete.Destroy;

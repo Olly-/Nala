@@ -658,6 +658,9 @@ end;
 
 procedure TmwSimplePasPar.Expected(Sym: TptTokenKind);
 begin
+  if (Lexer.TokenID = tok_DONE) then
+    raise ESyntaxError.Create('Max position reached');
+
   if Sym <> Lexer.TokenID then
   begin
     if TokenID = tokNull then
@@ -902,7 +905,7 @@ end;
 procedure TmwSimplePasPar.SEMICOLON;
 begin
   case Lexer.TokenID of
-    tokElse, tokEnd, tokExcept, tokfinally, tokFinalization, tokRoundClose, tokUntil: // jdj 2.23.20001 added tokFinalization
+    tokElse, tokEnd, tokExcept, tokFinally, tokFinalization, tokRoundClose, tokUntil: // jdj 2.23.20001 added tokFinalization
       ;
   else
     Expected(tokSemiColon);
@@ -950,11 +953,7 @@ end;
 ******************************************************************************)
 
 procedure TmwSimplePasPar.ParseFile;
-//var
-//  I: Integer;
 begin
-//  OutputDebugString('ParseFile');
-
   SkipJunk;
   case GenID of
     tokLibrary:

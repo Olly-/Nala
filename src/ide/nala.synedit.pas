@@ -5,24 +5,28 @@ unit nala.SynEdit;
 interface
 
 uses
-  Classes, SysUtils, Controls, SynEdit, SynEditMarkup, SynEditTypes, SynEditMiscClasses,
+  Classes, SysUtils, Controls, SynEdit, SynEditMiscClasses,
   SynGutterLineOverview, SynEditKeyCmds, LCLType, Types, SynGutter, SynHighlighterLape,
-  nala.AutoComplete, Dialogs;
+  nala.AutoComplete, Dialogs, Messages, nala.ParameterHint, nala.Parser.Script;
 
 type
-  { TNalaSynEdit }
-
   TNalaSynEdit = class(TSynEdit)
   private
     FLastModified: TDateTime;
     FOverView: TSynGutterLineOverview;
     FAutoComplete: TNalaAutoComplete;
+    FParameterHint: TNalaParameterHint;
 
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure WMKillFocus(var Msg: TWMKillFocus); message WM_KILLFOCUS;
     procedure DoSpecialLineMarkup(Sender: TObject; Line: Integer; var Special: Boolean; AMarkup: TSynSelectedColor);
   public
+    function Parse(FullScript: Boolean): TScriptParser;
+    procedure DoAutoComplete;
+
     property LastModified: TDateTime read FLastModified write FLastModified;
 
-    procedure ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: Pointer); override;
+    procedure CommandProcessor(Command: TSynEditorCommand; AChar: TUTF8Char; Data: Pointer; ASkipHooks: THookedCommandFlags=[]); override;
 
     procedure Load(Path: String);
     procedure Save(Path: String);
@@ -34,10 +38,11 @@ type
 implementation
 
 uses
-  Graphics, Forms, LazFileUtils;
+  Graphics, Forms, LazFileUtils, nala.MainForm, SynEditHighlighter, SynEditStrConst,
+  nala.Environment, nala.Types;
 
 var
-  SynEditHighlighter: TSynFreePascalSyn;
+  SyntaxHighlighter: TSynFreePascalSyn;
 
 constructor TNalaSynEdit.Create(AOwner: TComponent);
 begin
@@ -47,11 +52,13 @@ begin
   Align := alClient;
   BorderStyle := bsNone;
   OnSpecialLineMarkup := @DoSpecialLineMarkup;
-  Highlighter := SynEditHighlighter;
+  Highlighter := SyntaxHighlighter;
   Font.Quality := fqDefault;
+  TabWidth := 2;
+  BlockIndent := 2;
 
   Options := [eoAutoIndent, eoScrollPastEol, eoSmartTabs, eoTabsToSpaces,
-              eoTrimTrailingSpaces, eoGroupUndo, eoBracketHighlight, eoShowScrollHint] - [eoScrollPastEol];
+              eoTrimTrailingSpaces, eoGroupUndo, eoBracketHighlight, eoShowScrollHint];
   Options2 := [eoFoldedCopyPaste, eoOverwriteBlock];
 
   Gutter.LineNumberPart.MarkupInfo.Background := Gutter.Color;
@@ -63,28 +70,39 @@ begin
     AutoSize := False;
     Width := 12;
 
-    with TSynGutterLOvProviderModifiedLines.Create(Providers) do
-      Priority := 2;
-    with TSynGutterLOvProviderCurrentPage.Create(Providers) do
-      Priority := 1;
+    TSynGutterLOvProviderCurrentPage.Create(Providers).Priority := 1;
+    TSynGutterLOvProviderModifiedLines.Create(Providers).Priority := 2;
   end;
 
   FAutoComplete := TNalaAutoComplete.Create(nil);
   FAutoComplete.Editor := Self;
+
+  FParameterHint := TNalaParameterHint.Create(nil);
+  FParameterHint.Editor := Self;
 end;
 
 destructor TNalaSynEdit.Destroy;
 begin
   FAutoComplete.Free;
+  FParameterHint.Free;
 
   inherited Destroy;
 end;
 
-procedure TNalaSynEdit.ExecuteCommand(Command: TSynEditorCommand; const AChar: TUTF8Char; Data: pointer);
-var
-  p: TPoint;
+procedure TNalaSynEdit.CommandProcessor(Command: TSynEditorCommand; AChar: TUTF8Char; Data: Pointer; ASkipHooks: THookedCommandFlags);
+
+  function isJunk: Boolean;
+  var
+    Attri: TSynHighlighterAttributes;
+    Token: String;
+  begin
+    Result := (GetHighlighterAttriAtRowCol(Point(CaretX - 1, CaretY), Token, Attri)) and
+              ((Attri.Name = SYNS_AttrComment) or (Attri.Name = SYNS_AttrString) or
+               (Attri.Name = SYNS_AttrDirective) or (Attri.Name = SYNS_AttrNumber));
+  end;
+
 begin
-  inherited ExecuteCommand(Command, AChar, Data);
+  inherited CommandProcessor(Command, AChar, Data, ASkipHooks);
 
   (*
     ecDeleteLastChar  = 501;
@@ -94,7 +112,7 @@ begin
     ecDeleteLine      = 507;
     ecClearAll        = 508;
     ecLineBreak       = 509;
-    ecInsertLine      = 510
+    ecInsertLine      = 510;
     ecChar            = 511;
     ecUndo            = 601;
     ecRedo            = 602;
@@ -107,34 +125,71 @@ begin
   if ((Command >= ecDeleteLastChar) and (Command <= ecChar)) or
      ((Command >= ecUndo) and (Command <= ecPaste)) or
       (Command = ecString) or (Command = ecTab) then
-       FLastModified := Now();
+      begin
+        if (FParameterHint.Visible) then
+          FParameterHint.Invalidate();
 
-  if (AChar = '.') then
-  begin
-    p := ClientToScreen(Point(CaretXPix, CaretYPix + LineHeight + 1));
-    FAutoComplete.Execute('', p.x, p.y);
-  end;
+        FLastModified := Now();
+      end;
+
+  if ((Command = ecLeft) or (Command = ecRight) or (Command = ecUp) or (Command = ecDown)) and (FParameterHint.Visible) then
+    FParameterHint.Invalidate()
+  else
+  if (AChar = '.') and (not isJunk()) then
+    FAutoComplete.Execute('', ClientToScreen(Point(CaretXPix, CaretYPix + LineHeight + 1)))
+  else
+  if (AChar = '(') or (Command = ecParameterHint) and (not isJunk()) then
+    FParameterHint.Execute();
+end;
+
+procedure TNalaSynEdit.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  P: TPoint;
+begin
+  P := CaretXY;
+
+  inherited MouseDown(Button, Shift, X, Y);
+
+  if (FParameterHint.Visible) and ((CaretX <> P.X) or (CaretY <> P.Y)) then
+    FParameterHint.Invalidate;
+end;
+
+procedure TNalaSynEdit.WMKillFocus(var Msg: TWMKillFocus);
+begin
+  if (FParameterHint.Visible) then
+    FParameterHint.Hide;
 end;
 
 procedure TNalaSynEdit.DoSpecialLineMarkup(Sender: TObject; Line: Integer; var Special: Boolean; AMarkup: TSynSelectedColor);
 begin
   Special := False;
   {
-  if (Lines.Objects[Line] <> nil) then
+  with AMarkup do
   begin
-    if (Lines.Objects[Line] as TIntObject).Int = Ord(ltNone) then
-      Exit;
+    Foreground := clNone;
+    if (Odd(Line)) then
+      Background := clListOdd
+    else
+      Background := clListEven;
+    BackAlpha := 0;
+  end;
+  }
+end;
 
-    Special := True;
-    case (Lines.Objects[Line] as TIntObject).Int of
-      Ord(ltParsingError):
-        begin
-          AMarkup.Foreground := clNone;
-          AMarkup.Background := clRed;
-          AMarkup.BackAlpha := 15;
-        end;
-    end;
-  end; }
+function TNalaSynEdit.Parse(FullScript: Boolean): TScriptParser;
+begin
+  Result := TScriptParser.Create;
+  Result.addSearchPath(NalaEnvironment.Paths['Includes']);
+
+  if (FullScript) then
+    Result.Run(Text, -1, SelStart)
+  else
+    Result.Run(Text, SelStart, SelStart);
+end;
+
+procedure TNalaSynEdit.DoAutoComplete;
+begin
+  FAutoComplete.Execute('', Point(CaretXPix, CaretYPix + LineHeight + 1))
 end;
 
 procedure TNalaSynEdit.Load(Path: String);
@@ -150,10 +205,24 @@ begin
 end;
 
 initialization
-  SynEditHighlighter := TSynFreePascalSyn.Create(nil);
+  SyntaxHighlighter := TSynFreePascalSyn.Create(nil);
+
+  with SyntaxHighlighter do
+  begin
+    CommentAttri.Foreground := clBlue;
+    CommentAttri.Style := [fsBold];
+    IdentifierAttri.Foreground := clDefault;
+    NumberAttri.Foreground := clNavy;
+    StringAttri.Foreground := clBlue;
+    SymbolAttri.Foreground := clRed;
+    DirectiveAttri.Foreground := clRed;
+    DirectiveAttri.Style := [fsBold];
+    NestedComments := False;
+    StringKeywordMode := spsmNone;
+  end;
 
 finalization
-  SynEditHighlighter.Free;
+  SyntaxHighlighter.Free;
 
 end.
 

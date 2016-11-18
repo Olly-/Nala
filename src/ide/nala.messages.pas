@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, ComCtrls,
-  nala.ListBox;
+  nala.MessageList;
 
 type
 
@@ -16,10 +16,10 @@ type
   private
     FPageControl: TPageControl;
     FDebugTab, FMessageTab: TTabSheet;
-    FDebug, FMessages: TNalaListBox;
+    FDebug, FMessages: TMessageList;
   public
-    property Debug: TNalaListBox read FDebug;
-    property Messages: TNalaListBox read FMessages;
+    property Debug: TMessageList read FDebug;
+    property Messages: TMessageList read FMessages;
 
     procedure ShowMessages;
     procedure Hide;
@@ -63,20 +63,16 @@ begin
   FMessageTab := FPageControl.AddTabSheet;
   FMessageTab.Caption := 'Message';
   FMessageTab.ImageIndex := 11;
-  FMessages := TNalaListBox.Create(FPageControl);
-  FMessages.Parent := FMessageTab;
-  FMessages.Align := alClient;
-  FMessages.BorderStyle := bsNone;
-  FMessages.ImageList := NalaForm.Images12x12;
+
+  FMessages := TMessageList.Create(FMessageTab);
+  FMessages.Images := NalaForm.Images12x12;
 
   FDebugTab := FPageControl.AddTabSheet;
   FDebugTab.Caption := 'Debug';
   FDebugTab.ImageIndex := 10;
-  FDebug := TNalaListBox.Create(FPageControl);
-  FDebug.Parent := FDebugTab;
-  FDebug.Align := alClient;
-  FDebug.BorderStyle := bsNone;
-  FDebug.ImageList := NalaForm.Images12x12;
+
+  FDebug := TMessageList.Create(FDebugTab);
+  FDebug.Images := NalaForm.Images12x12;
 end;
 
 destructor TNalaMessages.Destroy;

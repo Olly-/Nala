@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, ComCtrls, Controls, StdCtrls,
-  nala.CodeParser;
+  nala.Parser.Code;
 
 type
   PNodeData = ^TNodeData;
@@ -22,15 +22,15 @@ type
     function AddNode(ADecl: TDeclaration; AText: String; ImageIndex: Int32 = -1; AParent: TTreeNode = nil): TTreeNode;
     procedure OnDeleteNode(Sender: TObject; Node: TTreeNode);
 
-    function AddRecord(Decl: TCPTypeDeclaration; ParentNode: TTreeNode = nil): TTreeNode;
+    function AddRecord(Decl: TCPType; ParentNode: TTreeNode = nil): TTreeNode;
     function AddType(AText: String; ParentNode: TTreeNode = nil): TTreeNode;
   public
     function FindNode(Str: String; Typ: TClass): TTreeNode;
 
-    function AddConst(Decl: TDeclConstant; ParentNode: TTreeNode = nil): TTreeNode;
-    function AddVar(Decl: TDeclVariable; ParentNode: TTreeNode = nil): TTreeNode;
-    function AddMethod(Decl: TDeclMethod; Locals: Boolean = False; ParentNode: TTreeNode = nil): TTreeNode;
-    function AddType(Decl: TCPTypeDeclaration; ParentNode: TTreeNode = nil): TTreeNode; overload;
+    function AddConst(Decl: TCPConstant; ParentNode: TTreeNode = nil): TTreeNode;
+    function AddVar(Decl: TCPVariable; ParentNode: TTreeNode = nil): TTreeNode;
+    function AddMethod(Decl: TCPMethod; Locals: Boolean = False; ParentNode: TTreeNode = nil): TTreeNode;
+    function AddType(Decl: TCPType; ParentNode: TTreeNode = nil): TTreeNode; overload;
 
     procedure LoadFromDecls(List: TDeclarationList; ParentNode: TTreeNode);
     procedure Assign(From: TNalaCodeTree);
@@ -75,20 +75,20 @@ begin
   end;
 end;
 
-function TNalaCodeTree.AddVar(Decl: TDeclVariable; ParentNode: TTreeNode): TTreeNode;
+function TNalaCodeTree.AddVar(Decl: TCPVariable; ParentNode: TTreeNode): TTreeNode;
 var
   Str: String;
 begin
   Str := Decl.Name;
   if (Decl.Typ <> '') then
     Str += ': ' + Decl.Typ;
-  if (Decl.Def <> '') then
-    Str += ' = ' + Decl.Def;
+  if (Decl.Default <> '') then
+    Str += ' = ' + Decl.Default;
 
   Result := AddNode(Decl, Str, 1, ParentNode);
 end;
 
-function TNalaCodeTree.AddMethod(Decl: TDeclMethod; Locals: Boolean; ParentNode: TTreeNode): TTreeNode;
+function TNalaCodeTree.AddMethod(Decl: TCPMethod; Locals: Boolean; ParentNode: TTreeNode): TTreeNode;
 
   function StrBefore(constref Delimiter, Text: String): String;
   var
@@ -105,6 +105,7 @@ var
   i: Integer;
   Node: TTreeNode;
 begin
+  {
   if (Decl.ObjectName <> '') then
   begin
     // Easy to check top level nodes
@@ -152,13 +153,15 @@ begin
 
   if (ParentNode <> nil) then
     ParentNode.Expanded := True;
+    }
 end;
 
-function TNalaCodeTree.AddRecord(Decl: TCPTypeDeclaration; ParentNode: TTreeNode): TTreeNode;
+function TNalaCodeTree.AddRecord(Decl: TCPType; ParentNode: TTreeNode): TTreeNode;
 var
   i: Integer;
   Node: TTreeNode;
 begin
+  {
   Result := AddNode(Decl, Decl.Format, 4, ParentNode);
 
   with Decl.Kind.GetRecord do
@@ -170,14 +173,17 @@ begin
       end;
 
   Result.Expanded := True;
+  }
 end;
 
-function TNalaCodeTree.AddType(Decl: TCPTypeDeclaration; ParentNode: TTreeNode): TTreeNode;
+function TNalaCodeTree.AddType(Decl: TCPType; ParentNode: TTreeNode): TTreeNode;
 begin
+   {
   if (Decl.Kind.Typ = tkRecord) then
     Result := AddRecord(Decl, ParentNode)
   else
     Result := AddNode(Decl, Decl.Format, 4, ParentNode);
+    }
 end;
 
 procedure TNalaCodeTree.LoadFromDecls(List: TDeclarationList; ParentNode: TTreeNode);
@@ -193,6 +199,7 @@ var
   i: Integer;
   Types, Constants, Variables, Methods: TTreeNode;
 begin
+  {
   Items.BeginUpdate;
 
   Types := AddSection('Types');
@@ -201,11 +208,11 @@ begin
   Methods := AddSection('Methods');
 
   for i := 0 to List.Count - 1 do
-    if (List[i].ClassType = TDeclMethod) and (TDeclMethod(List[i]).ObjectName <> '') then
-      AddMethod(TDeclMethod(List[i]), False, Types)
+    if (List[i].ClassType = TCPMethod) and (TCPMethod(List[i]).ObjectName <> '') then
+      AddMethod(TCPMethod(List[i]), False, Types)
     else
-    if (List[i].ClassType = TDeclMethod) then
-      AddMethod(TDeclMethod(List[i]), False, Methods)
+    if (List[i].ClassType = TCPMethod) then
+      AddMethod(TCPMethod(List[i]), False, Methods)
     else
     if (List[i].ClassType = TCPTypeDeclaration) then
       AddType(TCPTypeDeclaration(List[i]), Types)
@@ -230,12 +237,14 @@ begin
   ParentNode.Expanded := False;
 
   Items.EndUpdate;
+  }
 end;
 
 procedure TNalaCodeTree.Assign(From: TNalaCodeTree);
 var
   i: Int32;
 begin
+  {
   BeginUpdate;
   Items.Assign(From.Items);
 
@@ -249,28 +258,33 @@ begin
   end;
 
   EndUpdate;
+  }
 end;
 
 function TNalaCodeTree.AddType(AText: String; ParentNode: TTreeNode): TTreeNode;
 begin
+  {
   if (ParentNode = nil) then
     Result := Items.Add(nil, AText)
   else
     Result := Items.AddChild(ParentNode, AText);
 
   Result.ImageIndex := 4;
+  }
 end;
 
-function TNalaCodeTree.AddConst(Decl: TDeclConstant; ParentNode: TTreeNode): TTreeNode;
+function TNalaCodeTree.AddConst(Decl: TCPConstant; ParentNode: TTreeNode): TTreeNode;
 var
   Str: String;
 begin
+  {
   Str := Decl.Name;
   if (Decl.Typ <> '') then
     Str += ': ' + Decl.Typ;
   Str += ' = ' + Decl.Def;
 
   Result := AddNode(Decl, Str, 0, ParentNode);
+  }
 end;
 
 constructor TNalaCodeTree.Create(AOwner: TComponent);

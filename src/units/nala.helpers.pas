@@ -28,10 +28,6 @@ type
     function PrettyTextExtent(constref Str: String): TSize;
   end;
 
-  TVariantHelper = type Helper for Variant
-    function Assigned: Boolean;
-  end;
-
 implementation
 
 uses
@@ -172,7 +168,7 @@ var
   Bitmap: TNalaBitmap;
 begin
   Bitmap.Init(Str);
-  Self.LoadFromPtr(PRGB32(Bitmap.Data[0]), Bitmap.Width, Bitmap.Height);
+  Self.LoadFromPtr(@Bitmap.Data[0], Bitmap.Width, Bitmap.Height);
 end;
 
 procedure TBitmapHelper.LoadFromPtr(Ptr: PRGB32; AWidth, AHeight: Integer);
@@ -208,11 +204,6 @@ begin
   RawImage.Data := PByte(Ptr);
 
   LoadFromRawImage(RawImage, False);
-end;
-
-function TVariantHelper.Assigned: Boolean;
-begin
-  Result := TVarData(Self).VType <> varEmpty;
 end;
 
 end.

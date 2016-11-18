@@ -6,6 +6,7 @@
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
         <SaveFoldState Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
@@ -21,8 +22,57 @@
     <VersionInfo>
       <StringTable ProductVersion=""/>
     </VersionInfo>
-    <BuildModes Count="1">
-      <Item1 Name="Default" Default="True"/>
+    <BuildModes Count="2">
+      <Item1 Name="Linux32_Release" Default="True"/>
+      <Item2 Name="Win32_Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="..\..\Nala"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit;..\units;..\lape"/>
+            <Libraries Value="..\lape\extensions\ffi\bin\win32"/>
+            <OtherUnitFiles Value="..\units;..\lape;laz;..\units\imports;..\castalia;..\lape\extensions\ffi;parser"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Conditionals Value="if SrcOS = 'unix' then
+begin
+  UnitPath += ';../units/linux/';
+  IncPath += ';../units/linux/';
+end;
+if SrcOS = 'win' then
+begin
+  UnitPath += ';../units/windows/';
+  IncPath += ';../units/windows/';
+end;"/>
+          <CodeGeneration>
+            <TargetCPU Value="i386"/>
+            <TargetOS Value="win32"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+            </Debugging>
+          </Linking>
+          <Other>
+            <Verbosity>
+              <ShoLineNum Value="True"/>
+            </Verbosity>
+            <CompilerMessages>
+              <IgnoredMessages idx5024="True" idx4046="True"/>
+            </CompilerMessages>
+            <CustomOptions Value="-dCLASSESINLINE"/>
+            <OtherDefines Count="1">
+              <Define0 Value="CLASSESINLINE"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item2>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -49,7 +99,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="44">
+    <Units Count="49">
       <Unit0>
         <Filename Value="Nala.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -207,83 +257,109 @@
         <UnitName Value="nala.XLib"/>
       </Unit30>
       <Unit31>
-        <Filename Value="..\units\nala.windowinfo.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.WindowInfo"/>
-      </Unit31>
-      <Unit32>
         <Filename Value="..\units\linux\nala.window.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Window"/>
-      </Unit32>
-      <Unit33>
+      </Unit31>
+      <Unit32>
         <Filename Value="nala.autocomplete.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.AutoComplete"/>
-      </Unit33>
-      <Unit34>
+      </Unit32>
+      <Unit33>
         <Filename Value="nala.scriptparser.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.ScriptParser"/>
-      </Unit34>
-      <Unit35>
+      </Unit33>
+      <Unit34>
         <Filename Value="laz\nala.syncompletion.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.SynCompletion"/>
-      </Unit35>
-      <Unit36>
+      </Unit34>
+      <Unit35>
         <Filename Value="..\units\linux\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit36>
-      <Unit37>
+      </Unit35>
+      <Unit36>
         <Filename Value="..\units\osutils_header.inc"/>
         <IsPartOfProject Value="True"/>
-      </Unit37>
-      <Unit38>
+      </Unit36>
+      <Unit37>
         <Filename Value="..\units\windows\nala.window.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Window"/>
-      </Unit38>
-      <Unit39>
+      </Unit37>
+      <Unit38>
         <Filename Value="..\units\windows\nala.osutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.OSUtils"/>
-      </Unit39>
-      <Unit40>
+      </Unit38>
+      <Unit39>
         <Filename Value="..\units\windows\nala.mouse.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Mouse"/>
-      </Unit40>
-      <Unit41>
+      </Unit39>
+      <Unit40>
         <Filename Value="nala.templateform.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="TemplateForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="nala.TemplateForm"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\units\nala.types.tpoint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Types.TPoint"/>
       </Unit41>
       <Unit42>
-        <Filename Value="..\units\nala.tpoint.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="nala.TPoint"/>
-      </Unit42>
-      <Unit43>
         <Filename Value="..\units\imports\nala.imports.tpoint.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nala.Imports.TPoint"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="nala.imports.threading.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Imports.Threading"/>
       </Unit43>
+      <Unit44>
+        <Filename Value="..\units\nala.thread.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.Thread"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="..\units\nala.drawstring.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.DrawString"/>
+      </Unit45>
+      <Unit46>
+        <Filename Value="nala.completionitem.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.CompletionItem"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="nala.parameterhint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.ParameterHint"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="nala.messagelist.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="nala.MessageList"/>
+      </Unit48>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="../../Nala"/>
+      <Filename Value="..\..\Nala"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit;..\units"/>
-      <OtherUnitFiles Value="..\units;..\lape;laz;..\units\imports;..\castalia"/>
+      <IncludeFiles Value="$(ProjOutDir);..\castalia;$(LazarusDir)\components\synedit;..\units;..\lape"/>
+      <Libraries Value="..\lape\extensions\ffi\bin\win32"/>
+      <OtherUnitFiles Value="..\units;..\lape;laz;..\units\imports;..\castalia;..\lape\extensions\ffi;parser"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Conditionals Value="if SrcOS = 'unix' then
@@ -297,13 +373,13 @@ begin
   IncPath += ';../units/windows/';
 end;"/>
     <CodeGeneration>
-      <Checks>
-        <RangeChecks Value="True"/>
-      </Checks>
+      <Optimizations>
+        <OptimizationLevel Value="3"/>
+      </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
-        <UseHeaptrc Value="True"/>
+        <GenerateDebugInfo Value="False"/>
       </Debugging>
     </Linking>
     <Other>
@@ -313,31 +389,18 @@ end;"/>
       <CompilerMessages>
         <IgnoredMessages idx5024="True" idx4046="True"/>
       </CompilerMessages>
+      <CustomOptions Value="-dStaticFFI
+-dCLASSESINLINE"/>
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="7">
+    <Exceptions Count="2">
       <Item1>
-        <Name Value="EAbort"/>
+        <Name Value="Exception"/>
       </Item1>
       <Item2>
-        <Name Value="ECodetoolError"/>
-      </Item2>
-      <Item3>
-        <Name Value="EFOpenError"/>
-      </Item3>
-      <Item4>
-        <Name Value="lpException"/>
-      </Item4>
-      <Item5>
         <Name Value="ESyntaxError"/>
-      </Item5>
-      <Item6>
-        <Name Value="ESpecialException"/>
-      </Item6>
-      <Item7>
-        <Name Value="Exception"/>
-      </Item7>
+      </Item2>
     </Exceptions>
   </Debugging>
 </CONFIG>

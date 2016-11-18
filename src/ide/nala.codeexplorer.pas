@@ -5,7 +5,7 @@ unit nala.CodeExplorer;
 interface
 
 uses
-  Classes, SysUtils, Controls, ComCtrls, nala.CodeParser, nala.SynEdit,
+  Classes, SysUtils, Controls, ComCtrls, nala.Parser.Code, nala.SynEdit,
   nala.CodeTree;
 
 type
@@ -77,12 +77,13 @@ procedure TNalaScriptTreeUpdater.UpdateBuffer(Parser: TCodeParser; Pos: Int32);
 var
   i: Int32;
 begin
+  {
   FTreeBuffer.BeginUpdate;
   FTreeBuffer.Items.Clear;
 
   for i := 0 to Parser.Items.Count - 1 do
-    if (Parser.Items[i].ClassType = TDeclMethod) then
-      FTreeBuffer.AddMethod(TDeclMethod(Parser.Items[i]), (Pos > Parser.Items[i].StartPos) and (Pos < (Parser.Items[i].EndPos - 1)))
+    if (Parser.Items[i].ClassType = TCPMethod) then
+      FTreeBuffer.AddMethod(TCPMethod(Parser.Items[i]), (Pos > Parser.Items[i].StartPos) and (Pos < (Parser.Items[i].EndPos - 1)))
     else
     if (Parser.Items[i].ClassType = TDeclVariable) then
       FTreeBuffer.AddVar(TDeclVariable(Parser.Items[i]))
@@ -94,6 +95,7 @@ begin
       FTreeBuffer.AddType(TCPTypeDeclaration(Parser.Items[i]));
 
   FTreeBuffer.EndUpdate;
+  }
 end;
 
 procedure TNalaScriptTreeUpdater.Execute;
@@ -101,6 +103,7 @@ var
   LastUpdate: TDateTime = 0;
   Parser: TCodeParser;
 begin
+ {
   try
     while (not Terminated) do
     begin
@@ -127,6 +130,7 @@ begin
     on e: Exception do
       Writeln('Exception on TNalaScriptTreeUpdater.Execute: ' + e.ClassName + ': ' + e.Message);
   end;
+  }
 end;
 
 procedure TNalaScriptTreeUpdater.DoTerminate;
@@ -203,8 +207,8 @@ end;
 
 destructor TNalaCodeExplorer.Destroy;
 begin
-  FScriptTreeUpdater.Terminate;
-  FScriptTreeUpdater.WaitFor;
+  //FScriptTreeUpdater.Terminate;
+  //FScriptTreeUpdater.WaitFor;
 
   inherited Destroy;
 end;

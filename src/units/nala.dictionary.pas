@@ -64,11 +64,13 @@ type
     THashBucket  = array of THashElement;
     TMap         = array of THashBucket;
     THash        = function(constref key:K): UInt32;
+    TValueArray  = array of V;
   private
-    FData: TMap;         //map
-    FSize: UInt32;       //num items
-    FHigh: UInt32;       //real size
-    FResizable: Boolean; //static sized map? Default = False
+    FData: TMap;           //map
+    FSize: UInt32;         //num items
+    FHigh: UInt32;         //real size
+    FResizable: Boolean;   //static sized map? Default = False
+    FFreeObjects: Boolean; //cast values to TObject and free on clear
   public
     HashFunc: THash;
 
@@ -79,6 +81,7 @@ type
   public
     // create
     constructor Create(AHashFunc:THash);
+    destructor Destroy; override;
 
     // create a copy
     function Copy: TSelfType;
@@ -136,6 +139,9 @@ type
     // Check if a key exists. If it does it will return True.
     function Contains(key:K): Boolean; inline;
 
+    // Returns all values in the dictionary
+    function GetValues: TValueArray;
+
     // property item (default) - used to index the dictionary as if it's
     // a regualar array like structure. Can be used to add new key-value pairs.
     //
@@ -155,6 +161,9 @@ type
 
     // Should not be modified unless you know what you are doing
     property Size:UInt32 read FHigh write FHigh;
+
+    //  Cast values to TObject and free when the list is free'd
+    property FreeObjects: Boolean read FFreeObjects write FFreeObjects;
   end;
 
 
@@ -247,6 +256,12 @@ begin
   FResizable := True;
 end;
 
+destructor TDictionary<K,V>.Destroy;
+begin
+  Clear;
+
+  inherited Destroy;
+end;
 
 function TDictionary<K,V>.Copy(): TSelfType;
 var i:Int32;
@@ -272,7 +287,14 @@ end;
 
 
 procedure TDictionary<K,V>.Clear;
+var
+  i, j: Int32;
 begin
+  if (FreeObjects) then
+    for i := 0 to High(Self.FData) do
+      for j := 0 to High(Self.FData[i]) do
+        TObject(Pointer(@Self.FData[i][j].Val)^).Free;
+
   SetLength(FData, 0);
   FHigh := 0;
   FSize := DICT_MIN_SIZE-1;
@@ -454,6 +476,21 @@ function TDictionary<K,V>.Contains(key: K): Boolean;
 var idx: THashIndex;
 begin
   Result := Find(key, idx);
+end;
+
+
+function TDictionary<K,V>.GetValues: TValueArray;
+var i, j, c: Int32;
+begin
+  SetLength(Result, Size);
+  c := 0;
+
+  for i := 0 to High(FData) do
+    for j := 0 to High(FData[i]) do
+    begin
+      Result[c] := FData[i][j].Val;
+      Inc(c);
+    end;
 end;
 
 end.

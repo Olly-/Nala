@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, LCLType,
-  nala.WindowBase, nala.CoreTypes, nala.XLib, nala.Bitmap, nala.WindowInfo,
+  nala.WindowBase, nala.Types, nala.XLib, nala.Bitmap,
   x, xlib;
 
 type
@@ -36,7 +36,7 @@ type
     function Data(X, Y, AWidth, AHeight: Int32): TWindowData; override;
     function HandleIsVaild: Boolean; override;
 
-    function GetChildren(Recursive: Boolean = False): TWindowList;
+    //function GetChildren(Recursive: Boolean = False): TWindowList;
 
     constructor Create(AWindowHandle: HWND = 0);
     destructor Destroy; override;
@@ -75,7 +75,6 @@ procedure TNalaWindow.setHandle(AValue: HWND);
       Window, Parent, Root: TWindow;
       Children: PWindowArray;
       Count: CInt;
-      i: Integer;
       Tree: array of TWindow;
     begin
       Result := 0;
@@ -247,6 +246,7 @@ begin
   Result := FErrorCount = 0;
 end;
 
+{
 function TNalaWindow.GetChildren(Recursive: Boolean): TWindowList;
 type
   TWindowArr = array of TWindow;
@@ -285,6 +285,7 @@ begin
   for i := 0 to High(Arr) do
     Result.Append(Arr[i]);
 end;
+}
 
 constructor TNalaWindow.Create(AWindowHandle: HWND);
 begin

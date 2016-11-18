@@ -10,8 +10,8 @@ interface
 implementation
 
 uses
-  BaseUnix, Unix, xlib, x, xatom, x86, xutil,
-  nala.Window, nala.XLib;
+  BaseUnix, Unix, xlib, x, xutil,
+  nala.XLib;
 
 var
   Display: PDisplay;

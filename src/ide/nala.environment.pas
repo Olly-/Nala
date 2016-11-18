@@ -64,10 +64,14 @@ begin
   FFiles.Values['Nala'] := Application.ExeName;
   FFiles.Values['MemoryLeaks'] := FPaths.Values['AppData'] + 'memoryleaks.txt';
 
-  CreateDirUTF8(FPaths.Values['AppData']);
-  CreateDirUTF8(FPaths.Values['Includes']);
-  CreateDirUTF8(FPaths.Values['Plugins']);
-  CreateDirUTF8(FPaths.Values['Templates']);
+  if (not DirectoryExistsUTF8(FPaths.Values['AppData'])) then
+    CreateDirUTF8(FPaths.Values['AppData']);
+  if (not DirectoryExistsUTF8(FPaths.Values['Includes'])) then
+    CreateDirUTF8(FPaths.Values['Includes']);
+  if (not DirectoryExistsUTF8(FPaths.Values['Plugins'])) then
+    CreateDirUTF8(FPaths.Values['Plugins']);
+  if (not DirectoryExistsUTF8(FPaths.Values['Templates'])) then
+    CreateDirUTF8(FPaths.Values['Templates']);
 
   Writeln('Paths:');
   for i := 0 to FPaths.Count - 1 do

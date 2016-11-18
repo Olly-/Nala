@@ -15,7 +15,7 @@ type
   TMSFormat = (
     mfDigit, // 00:00:00:00
     mfShort, // 0 days, 0 hours, 0 mins, 0 secs
-    mfLong   // 0 days, 0 dours, 0 minutes and 0 seconds
+    mfLong   // 0 days, 0 hours, 0 minutes and 0 seconds
   );
 
   TMSFormatFlag = (mffSeconds, mffDays, mffUpperCase);
@@ -27,7 +27,7 @@ function ConvertMilliseconds(MS: UInt64; Style: TMSFormat; Flags: TMSFormatFlags
 implementation
 
 uses
-  nala.Strings, strutils;
+  strutils;
 
 procedure DecodeMilliseconds(MS: UInt64; var Days, Hours, Minutes, Seconds: UInt32);
 begin

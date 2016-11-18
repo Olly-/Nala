@@ -122,8 +122,6 @@ begin
 end;
 
 function TNalaWindow.getWidth: Int32;
-var
-  r: TRect;
 begin
   Result := OSUtils.WindowWidth(FHandle);
   if (FIsTopWindow) then

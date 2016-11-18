@@ -1,15 +1,14 @@
 unit nala.MainForm;
 
-{$DEFINE HEAPTRC} { + Enable in project options / debugging }
+{.$DEFINE HEAPTRC} { + Enable in project options / debugging }
 
 {$mode objfpc}{$H+}
-{$modeswitch advancedrecords}
 
 interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  AnchorDockStorage, XMLPropStorage, ComCtrls, ExtCtrls, Menus, LCLIntf, LCLType,
+  AnchorDockStorage, ComCtrls, ExtCtrls, Menus, LCLIntf, LCLType,
   nala.AnchorDocking, nala.Panel, nala.ScriptTab, nala.ClientPanel, nala.ColorPanel,
   nala.Types, nala.CodeExplorer, nala.Environment
   {$IFDEF HEAPTRC},
@@ -96,7 +95,7 @@ var
 implementation
 
 uses
-  LazFileUtils, nala.TemplateForm;
+  LazFileUtils, nala.TemplateForm, nala.Parser.Script;
 
 {$R *.lfm}
 
@@ -112,7 +111,7 @@ begin
   FCodeExplorer.Align := alClient;
 
   FScriptTabs := TNalaTabs.Create(FEditorPanel);
-  FScriptTabs.AddTab;
+  FScriptTabs.AddTab();
 
   SetButtonState(bsStoppedScript);
 end;
@@ -329,6 +328,12 @@ begin
     FMessagePanel.InitHeader;
     FClientPanel.InitHeader;
     FColorPanel.InitHeader;
+
+    DockMaster.MakeVisible(FExplorerPanel, True);
+    DockMaster.MakeVisible(FEditorPanel, True);
+    DockMaster.MakeVisible(FMessagePanel, True);
+    DockMaster.MakeVisible(FClientPanel, True);
+    DockMaster.MakeVisible(FColorPanel, True);
   finally
     Self.Left := Pos.X;
     Self.Top := Pos.Y;

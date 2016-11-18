@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, SynEdit, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, Menus, StdCtrls, ButtonPanel, nala.MiscComponents,
+  ExtCtrls, Menus, StdCtrls, ButtonPanel,
   nala.SynEdit;
 
 type

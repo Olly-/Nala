@@ -55,14 +55,14 @@ begin
   begin
     Dump.Section := 'Box';
 
-    addGlobalFunc('function Box(X1, Y1, X2, Y2: Int32): TBox;', @Lape_Box);
+    addGlobalFunc('function Box(X1, Y1, X2, Y2: Int32): TBox;', '', @Lape_Box);
 
-    addGlobalFunc('function TBox.Area: UInt32;', @Lape_TBox_Area);
-    addGlobalFunc('function TBox.Width: UInt32;', @Lape_TBox_Width);
-    addGlobalFunc('function TBox.Height: UInt32;', @Lape_TBox_Height);
-    addGlobalFunc('function TBox.Middle: TPoint;', @Lape_TBox_Middle);
-    addGlobalFunc('function TBox.ToString: String;', @Lape_TBox_ToString);
-    addGlobalFunc('procedure TBox.Offset(Point: TPoint);', @Lape_TBox_Offset);
+    addGlobalFunc('function TBox.Area: UInt32;', 'Returns the area the box covers', @Lape_TBox_Area);
+    addGlobalFunc('function TBox.Width: UInt32;', 'Returns the width of the box', @Lape_TBox_Width);
+    addGlobalFunc('function TBox.Height: UInt32;', 'Returns the height of the box', @Lape_TBox_Height);
+    addGlobalFunc('function TBox.Middle: TPoint;', 'Returns the middle of the box', @Lape_TBox_Middle);
+    addGlobalFunc('function TBox.ToString: String;', '', @Lape_TBox_ToString);
+    addGlobalFunc('procedure TBox.Offset(Point: TPoint);', 'Offsets the box by ''Point''', @Lape_TBox_Offset);
   end;
 end;
 

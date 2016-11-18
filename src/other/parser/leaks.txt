@@ -1,0 +1,18 @@
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+Heap dump by heaptrc unit
+416914 memory blocks allocated : 70901048/72489528
+416914 memory blocks freed     : 70901048/72489528
+0 unfreed memory blocks : 0
+True heap size : 425984 (112 used in System startup)
+True free heap : 425872
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 
+C:\Users\Olly\Desktop\Nala\src\other\parser\test.exe 

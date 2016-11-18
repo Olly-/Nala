@@ -5,8 +5,7 @@ unit nala.Imports.Threading;
 interface
 
 uses
-  Classes, SysUtils, lpTypes, lpvartypes, nala.LapeCompiler, nala.Thread,
-  lpffi, ffi, lpffiwrappers;
+  Classes, SysUtils, lpTypes, lpvartypes, nala.LapeCompiler, nala.Thread, ffi;
 
 procedure Import_Threading(Compiler: TLPCompiler; Thread: TThread);
 

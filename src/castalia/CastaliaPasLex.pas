@@ -1400,7 +1400,7 @@ begin
   InitDefines;
 
   MaxPos := -1;
-end; { Create }
+end;
 
 destructor TmwBasePasLex.Destroy;
 begin
@@ -2245,7 +2245,7 @@ begin
   inc(Run);
   fTokenID := tokUnknown;
   if Assigned(FOnMessage) then
-   FOnMessage(Self, meError, 'Unknown Character', PosXY.X, PosXY.Y);
+    FOnMessage(Self, meError, 'Unknown Character', PosXY.X, PosXY.Y);
 end;
 
 procedure TmwBasePasLex.Next;

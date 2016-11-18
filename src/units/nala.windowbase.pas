@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, LCLType,
-  nala.Types, fgl, nala.WindowInfo;
+  nala.Types;
 
 (*
   Based on how Lazarus forms work:
@@ -64,14 +64,10 @@ type
 
     function Data(X, Y, AWidth, AHeight: Int32): TWindowData; virtual;
     function Data: TWindowData; overload;
-
-    function GetChildren(Recursive: Boolean = False): TWindowList;
   end;
 
 implementation
 
-uses
-  nala.TBox;
 
 { TNalaWindowBase }
 
@@ -88,11 +84,6 @@ end;
 function TNalaWindowBase.HandleIsVaild: Boolean;
 begin
   raise Exception.Create('TNalaWindow.HandleIsVaild: Not supported');
-end;
-
-function TNalaWindowBase.GetChildren(Recursive: Boolean): TWindowList;
-begin
-  raise Exception.Create('TNalaWindow.GetChildren: Not supported');
 end;
 
 procedure TNalaWindowBase.setHandle(AValue: HWND);

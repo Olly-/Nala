@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils,
-  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree, nala.Dictionary, lpexceptions, ffi, lpffi, lpffiwrappers;
+  lpcompiler, lptypes, lpvartypes, lpeval, lputils, lpparser, lptree, nala.Dictionary, lpexceptions, ffi, lpffi;
 
 type
 
@@ -54,8 +54,8 @@ type
 
     procedure AppendDump(constref Str: String);
   public
-    function addGlobalFunc(AHeader: lpString; Value: Pointer): TLapeGlobalVar; override;
-    function addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar; override;
+    function addGlobalFunc(AHeader: lpString; Value: Pointer): TLapeGlobalVar; overload; override;
+    function addGlobalFunc(AHeader: lpString; Documentation: String; Value: Pointer): TLapeGlobalVar; overload;
 
     function addGlobalType(Str: lpString; AName: lpString): TLapeType; override;
     function addGlobalType(Typ: TLapeType; AName: lpString = ''; ACopy: Boolean = True): TLapeType; override;
@@ -75,7 +75,7 @@ type
 
     property Dump: TLPCompilerDump read FDump;
 
-    constructor Create(AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean = False); overload;
+    constructor Create(constref AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean = False); overload;
     destructor Destroy; override;
   end;
 
@@ -173,6 +173,17 @@ begin
   Result := inherited;
 end;
 
+function TLPCompiler.addGlobalFunc(AHeader: lpString; Documentation: String; Value: Pointer): TLapeGlobalVar;
+begin
+  if (Documentation <> '') then
+    AHeader := '{!DOCREF} { @desc:' + Documentation + '}' + AHeader;
+
+  AppendDump(AHeader + ' begin end');
+  FDumping := False;
+  Result := addGlobalFunc(AHeader, Value);
+  FDumping := True;
+end;
+
 function TLPCompiler.addGlobalType(Str: lpString; AName: lpString): TLapeType;
 begin
   AppendDump('type ' + AName + ' = ' + Str);
@@ -205,12 +216,6 @@ begin
     FDumping := True;
     AppendDump('type ' + AName + ' = ' + Str);
   end;
-end;
-
-function TLPCompiler.addGlobalMethod(AHeader: lpString; AMethod, ASelf: Pointer): TLapeGlobalVar;
-begin
-  AppendDump(AHeader + ' begin end');
-  Result := inherited;
 end;
 
 function TLPCompiler.addDelayedCode(ACode: lpString; AFileName: lpString; AfterCompilation: Boolean; IsGlobal: Boolean): TLapeTree_Base;
@@ -289,7 +294,7 @@ begin
     FDump.FCurrent.Delete(FDump.FCurrent.Count - 1); // Delete variable dump
 end;
 
-constructor TLPCompiler.Create(AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean);
+constructor TLPCompiler.Create(constref AScript: String; Imports: TLPImports; Thread: TThread; Dumping: Boolean);
 var
   Typ: ELapeBaseType;
 begin
@@ -303,7 +308,7 @@ begin
   ExposeGlobals(Self);
 
   try
-    StartImporting;
+    StartImporting();
 
     if (lpiCore in Imports) then Import_Core(Self, Thread);
     if (lpiString in Imports) then Import_String(Self);
@@ -312,7 +317,7 @@ begin
     if (lpiPoint in Imports) then Import_TPoint(Self);
     if (lpiThreading in Imports) then Import_Threading(Self, Thread);
 
-    EndImporting;
+    EndImporting();
   except
     on e: Exception do
       LapeException('Exception on importing unit: ' + e.Message);

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, ComCtrls, ExtCtrls, Buttons, Dialogs,
-  nala.Messages, nala.SynEdit, nala.ScriptThread, nala.ListBox;
+  nala.Messages, nala.SynEdit, nala.ScriptThread;
 
 type
 

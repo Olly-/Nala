@@ -133,6 +133,7 @@ type
     FClSelect: TColor;
     FCaseSensitive: boolean;
     FBackgroundColor: TColor;
+    FOddBackgroundColor: TColor;
     FOnSearchPosition: TSynBaseCompletionSearchPosition;
     FOnKeyCompletePrefix: TNotifyEvent;
     FOnKeyNextChar: TNotifyEvent;
@@ -203,7 +204,8 @@ type
     constructor Create(AOwner: Tcomponent); override;
     destructor Destroy; override;
     function Focused: Boolean; override;
-    procedure ShowItemHint(AIndex: Integer);
+    procedure ShowItemHint(AIndex: Integer); virtual;
+    procedure HideItemHint; virtual;
     procedure OnHintTimer(Sender: TObject);
     // Must only be set via TSynCompletion.SetEditor
     property CurrentEditor: TCustomSynEdit read FCurrentEditor;
@@ -231,6 +233,7 @@ type
     property OnKeyPrevChar: TNotifyEvent read FOnKeyPrevChar write FOnKeyPrevChar;// e.g. arrow left
     property OnPositionChanged: TNotifyEvent read FOnPositionChanged write FOnPositionChanged;
     property BackgroundColor: TColor read FBackgroundColor write SetBackgroundColor;
+    property OddBackgroundColor: TColor read FOddBackgroundColor write FOddBackgroundColor;
     property TextColor: TColor read FTextColor write FTextColor;
     property TextSelectedColor: TColor
       read FTextSelectedColor write FTextSelectedColor;
@@ -241,6 +244,7 @@ type
     property DoubleClickSelects: Boolean read FDoubleClickSelects write FDoubleClickSelects default True;
     property ShowSizeDrag: Boolean read FShowSizeDrag write SetShowSizeDrag default False;
     property OnDragResized: TNotifyEvent read FOnDragResized write FOnDragResized;
+    property ScrollBar: TScrollBar read Scroll;
   end;
 
   TSynBaseCompletionFormClass = class of TSynBaseCompletionForm;
@@ -555,13 +559,18 @@ begin
   Canvas.Brush.Color := clBtnFace;
   Canvas.Brush.Style := bsSolid;
   Canvas.FillRect(ClientRect);
+  {$IFDEF WINDOWS}
+    Canvas.Pen.Color := clWhite;
+    Canvas.MoveTo(0, 0);
+    Canvas.LineTo(0, ClientRect.Bottom);
+  {$ENDIF}
   Canvas.Pen.Color := clBtnShadow;
   Canvas.MoveTo(ClientRect.Right-2, ClientRect.Bottom-1);
-  Canvas.LineTo(ClientRect.Right-1, ClientRect.Bottom-2);
+  Canvas.LineTo(ClientRect.Right, ClientRect.Bottom-3);
   Canvas.MoveTo(ClientRect.Right-5, ClientRect.Bottom-1);
-  Canvas.LineTo(ClientRect.Right-1, ClientRect.Bottom-5);
+  Canvas.LineTo(ClientRect.Right, ClientRect.Bottom-6);
   Canvas.MoveTo(ClientRect.Right-8, ClientRect.Bottom-1);
-  Canvas.LineTo(ClientRect.Right-1, ClientRect.Bottom-8);
+  Canvas.LineTo(ClientRect.Right, ClientRect.Bottom-9);
 end;
 
 { TSynBaseCompletionForm }
@@ -654,8 +663,7 @@ begin
   // completion box lost focus
   // this can happen when a hint window is clicked => ToDo
   Visible := False;
-  FHintTimer.Enabled := False;
-  FHint.Visible := False;
+  HideItemHint;
   if Assigned(OnCancel) then OnCancel(Self);
   if (FCurrentEditor<>nil) and (TCustomSynEdit(fCurrentEditor).HandleAllocated)
   then
@@ -729,6 +737,12 @@ begin
   else begin
     FHint.Hide;
   end;
+end;
+
+procedure TSynBaseCompletionForm.HideItemHint;
+begin
+  FHintTimer.Enabled := False;
+  FHint.Visible := False;
 end;
 
 procedure TSynBaseCompletionForm.OnHintTimer(Sender: TObject);
@@ -886,7 +900,7 @@ end;
 procedure TSynBaseCompletionForm.Paint;
 var
   i, Ind: integer;
-  PaintWidth, YYY, RightC, BottomC: Integer;
+  PaintWidth, YYY, BottomC: Integer;
   Capt: String;
 begin
 //Writeln('[TSynBaseCompletionForm.Paint]');
@@ -907,30 +921,33 @@ begin
     Scroll.Max := 0;
   end;
 
-  PaintWidth := Width - Scroll.Width;
-  RightC := PaintWidth - 2 * DrawBorderWidth;
+  PaintWidth := ClientWidth - Scroll.Width - (DrawBorderWidth * 2) + 1;
   //DebugLn(['TSynBaseCompletionForm.Paint NbLinesInWindow=',NbLinesInWindow,' ItemList.Count=',ItemList.Count]);
   for i := 0 to Min(NbLinesInWindow - 1, ItemList.Count - Scroll.Position - 1) do
   begin
     YYY := DrawBorderWidth + FFontHeight * i;
     BottomC := (FFontHeight * (i + 1))+1;
+    Ind := i + Scroll.Position;
     if i + Scroll.Position = Position then
     begin
       Canvas.Brush.Color := clSelect;
       Canvas.Pen.Color := clSelect;
-      Canvas.Rectangle(DrawBorderWidth, YYY, RightC, BottomC);
+      Canvas.Rectangle(DrawBorderWidth, YYY, PaintWidth, BottomC);
       Canvas.Pen.Color := clBlack;
       Canvas.Font.Color := TextSelectedColor;
       Hint := ItemList[Position];
     end
     else
     begin
-      Canvas.Brush.Color := BackgroundColor;
+      if (Odd(Ind)) then
+        Canvas.Brush.Color := OddBackgroundColor
+      else
+        Canvas.Brush.Color := BackgroundColor;
       Canvas.Font.Color := TextColor;
-      Canvas.FillRect(Rect(DrawBorderWidth, YYY, RightC, BottomC));
+      Canvas.FillRect(Rect(DrawBorderWidth, YYY, PaintWidth, BottomC));
     end;
     //DebugLn(['TSynBaseCompletionForm.Paint ',i,' ',ItemList[Scroll.Position + i]]);
-    Ind := i + Scroll.Position;
+
     Capt := ItemList[Scroll.Position + i];
     if not Assigned(OnPaintItem)
     or not OnPaintItem(Capt, Canvas, DrawBorderWidth, YYY, Ind = Position, Ind)
@@ -940,7 +957,7 @@ begin
   // paint the rest of the background
   if NbLinesInWindow > ItemList.Count - Scroll.Position then
   begin
-    Canvas.brush.color := color;
+    Canvas.Brush.Color := clWhite;
     i:=(FFontHeight * ItemList.Count)+1;
     Canvas.FillRect(Rect(0, i, PaintWidth, Height));
   end;
@@ -1232,10 +1249,7 @@ begin
   NbLinesInWindow := NbLinesInWindow;
   Scroll.BorderSpacing.Top := FDrawBorderWidth;
   Scroll.BorderSpacing.Right := FDrawBorderWidth;
-  if SizeDrag.Visible then
-    Scroll.BorderSpacing.Bottom := 0
-  else
-    Scroll.BorderSpacing.Bottom := FDrawBorderWidth;
+  Scroll.BorderSpacing.Bottom := 0;
   SizeDrag.BorderSpacing.Right := FDrawBorderWidth;
   SizeDrag.BorderSpacing.Bottom := FDrawBorderWidth;
 end;
@@ -1255,7 +1269,7 @@ end;
 procedure TSynBaseCompletionForm.IncHintLock;
 begin
   inc(FHintLock);
-  FHint.Hide
+  HideItemHint;
 end;
 
 procedure TSynBaseCompletionForm.DecHintLock;
@@ -2214,4 +2228,5 @@ initialization
 
 
 end.
+
 

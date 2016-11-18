@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils,
-  x, xlib, ctypes, xatom;
+  x, xlib, ctypes;
 
 type
   TXPointerEvent = record

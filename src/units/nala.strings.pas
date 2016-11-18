@@ -6,7 +6,8 @@ unit nala.Strings;
 interface
 
 uses
-  Classes, SysUtils, base64, nala.Types, md5, sha1;
+  Classes, SysUtils, base64, md5, sha1,
+  nala.Types;
 
 type
 
@@ -22,8 +23,9 @@ type
 
     function PosEx(constref SubStr: String): TIntArray;
     function Pos(constref SubStr: String; Offset: Int32 = 1): Int32;
-    function Pos(constref SubStrings: TStringArray; Offset: Int32 = 1): Int32; overload;
     function PosR(constref SubStr: String): Int32;
+
+    function Contains(constref SubStr: String): Boolean;
 
     function Explode(constref Delimiter: String): TStringArray;
 
@@ -33,8 +35,8 @@ type
     function ExtractNumbers: String;
     function Extract(constref Chars: TCharArray): String;
 
-    function Upper: String;
-    function Lower: String;
+    function UpperCase: String;
+    function LowerCase: String;
 
     function Trim: String;
 
@@ -108,19 +110,6 @@ begin
   SetLength(Result, h);
 end;
 
-function TNalaStringHelper.Pos(constref SubStrings: TStringArray; Offset: Int32): Int32;
-var
-  p, i: Int32;
-begin
-  for i := Offset to High(SubStrings) do
-  begin
-    p := Self.Pos(SubStrings[i], Offset);
-    if (p > 0) then
-      Exit(p);
-  end;
-  Exit(0);
-end;
-
 {*
  Returns first position of the given pattern/substring from left.
 *}
@@ -167,6 +156,11 @@ begin
   Exit(0);
 end;
 
+function TNalaStringHelper.Contains(constref SubStr: String): Boolean;
+begin
+  Result := Self.Pos(SubStr) > 0;
+end;
+
 function TNalaStringHelper.Replace(constref SubStr, ReplaceStr: String; Flags: TReplaceFlags): String;
 var
   Hi,HiSub,HiRep,i,j,k: Int32;
@@ -194,7 +188,7 @@ begin
       end;
 
       case (rfIgnoreCase in Flags) of
-        True: Subs := LowerCase(Self).PosEx(LowerCase(SubStr));
+        True: Subs := System.LowerCase(Self).PosEx(System.LowerCase(SubStr));
         False:Subs := Self.PosEx(SubStr);
       end;
       SetLength(Result, Hi + (Length(Subs) * (HiRep-HiSub)));
@@ -216,7 +210,7 @@ begin
     begin
       SetLength(Result, Hi + (HiRep-HiSub));
       case (rfIgnoreCase in flags) of
-        True: Curr := LowerCase(Self).Pos(LowerCase(SubStr));
+        True: Curr := System.LowerCase(Self).Pos(System.LowerCase(SubStr));
         False:Curr := Self.Pos(SubStr);
       end;
       if Curr = 0 then Exit(Copy(Self, 1,Hi));
@@ -265,14 +259,14 @@ begin
       Result += Self[i];
 end;
 
-function TNalaStringHelper.Upper: String;
+function TNalaStringHelper.UpperCase: String;
 begin
-  Result := UpperCase(Self);
+  Result := System.UpCase(Self);
 end;
 
-function TNalaStringHelper.Lower: String;
+function TNalaStringHelper.LowerCase: String;
 begin
-  Result := LowerCase(Self);
+  Result := System.LowerCase(Self);
 end;
 
 function TNalaStringHelper.Trim: String;

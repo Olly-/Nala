@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils,
   lpcompiler, lptypes, lpvartypes, lpeval, lpinterpreter, lpexceptions, lpparser,
-  nala.LapeCompiler, nala.ListBox, fgl, nala.Thread;
+  nala.LapeCompiler, nala.MessageList, nala.Thread;
 
 type
   EMessageType = (mtMessage, mtError, mtNote);
@@ -23,10 +23,10 @@ type
     FCompiler: TLPCompiler;
     FRunning: TInitBool;
 
-    FDebugBox: TNalaListBox;
+    FDebugBox: TMessageList;
     FDebugBuffer: String;
 
-    FMessageBox: TNalaListBox;
+    FMessageBox: TMessageList;
     FMessageBuffer: String;
 
     FThreads: TNalaThreadList;
@@ -46,7 +46,7 @@ type
     property Running: Boolean read getRunning write setRunning;
 
     // Debug tab
-    property DebugBox: TNalaListBox read FDebugBox write FDebugBox;
+    property DebugBox: TMessageList read FDebugBox write FDebugBox;
     property DebugBuffer: String read FDebugBuffer write FDebugBuffer;
 
     procedure DebugWrite(constref Str: String);
@@ -54,7 +54,7 @@ type
     procedure DebugWriteLn(constref Str: String; MessageType: EMessageType = mtMessage); overload;
 
     // Message tab
-    property MessageBox: TNalaListBox read FMessageBox write FMessageBox;
+    property MessageBox: TMessageList read FMessageBox write FMessageBox;
     property MessageBuffer: String read FMessageBuffer write FDebugBuffer;
 
     procedure MessageWrite(constref Str: String);
@@ -206,7 +206,7 @@ end;
 
 procedure TNalaScriptThread.DebugWriteLn(MessageType: EMessageType);
 begin
-  FDebugBox.AddSync(FDebugBuffer, Ord(MessageType));
+  FDebugBox.Add(FDebugBuffer, Ord(MessageType), True);
   SetLength(FDebugBuffer, 0);
 end;
 
@@ -223,7 +223,7 @@ end;
 
 procedure TNalaScriptThread.MessageWriteLn(MessageType: EMessageType);
 begin
-  FMessageBox.AddSync(FMessageBuffer, Ord(MessageType));
+  FMessageBox.Add(FMessageBuffer, Ord(MessageType), True);
   SetLength(FMessageBuffer, 0);
 end;
 
